@@ -151,7 +151,7 @@ local function createTab(name)
 	b.BorderSizePixel = 0
 	b.AutoButtonColor = true
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,3)
-	b.Size = UDim2.new(0,78,1,0)
+	b.Size = UDim2.new(0,75,1,0)
 	tabButtons[name] = b
 
 	b.MouseButton1Click:Connect(function()
@@ -168,7 +168,7 @@ local function createPage(name)
 end
 
 -- Create tabs & pages
-local tabs = {"Info","Fishing","Shop","Auto","Teleport","Misc"}
+local tabs = {"Info","Fishing","Auto","Teleport","Misc","Whook"}
 for _,name in ipairs(tabs) do
 	createTab(name)
 	createPage(name)
@@ -194,10 +194,10 @@ end
 
 label(pageList.Info, "Welcome to QU33N", 10)
 label(pageList.Fishing, "Fishing features here", 10)
-label(pageList.Shop, "Shop features here", 10)
-label(pageList.AutoQuest, "Auto features here", 10)
+label(pageList.Auto, "Auto features here", 10)
 label(pageList.Teleport, "Teleport features here", 10)
 label(pageList.Misc, "Misc features here", 10)
+label(pageList.Whook, "Webhook Features", 10)
 
 notify("QU33N Loaded Successfully!")
 end)
