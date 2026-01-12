@@ -1,4 +1,4 @@
--- tabs/fishing.lua (FINAL + Auto Equip Rod ON/OFF)
+-- tabs/fishing.lua (FINAL V3 — Toggle Bulat + AutoEquipRod)
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -7,8 +7,6 @@ local Theme = UI.Theme
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local Backpack = LocalPlayer:WaitForChild("Backpack")
-local PlayerCharacter = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
 page:ClearAllChildren()
 
@@ -29,7 +27,7 @@ local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0,14)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ===== CARD FUNCTION =====
+-- CARD HELPER
 local function createToggleCard(parent, title)
 	local Card = Instance.new("Frame", parent)
 	Card.Size = UDim2.new(1,-6,0,50)
@@ -81,7 +79,7 @@ end
 -- ===== FISHING SUPPORT CARD =====
 local cardFishing, bodyFishing = createToggleCard(Scroll, "Fishing Support")
 
--- Row container
+-- Row
 local row = Instance.new("Frame")
 row.Size = UDim2.new(1,0,0,36)
 row.BackgroundTransparency = 1
@@ -98,50 +96,54 @@ label.TextSize = 14
 label.TextColor3 = Theme.Text
 label.Text = "Auto Equip Rod"
 label.TextXAlignment = Enum.TextXAlignment.Left
+label.TextYAlignment = Enum.TextYAlignment.Center
 
--- Switch
-local switchFrame = Instance.new("Frame", row)
-switchFrame.Size = UDim2.new(0.25,0,0.6,0)
-switchFrame.Position = UDim2.new(0.65,0,0.2,0)
-switchFrame.BackgroundColor3 = Color3.fromRGB(90,90,90)
-Instance.new("UICorner", switchFrame).CornerRadius = UDim.new(1,0)
+-- Small circle toggle
+local toggleBG = Instance.new("Frame")
+toggleBG.Parent = row
+toggleBG.Size = UDim2.new(0,36,0,20)
+toggleBG.Position = UDim2.new(0.75,0,0.5,-10)
+toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
+Instance.new("UICorner", toggleBG).CornerRadius = UDim.new(1,0)
 
-local knob = Instance.new("Frame", switchFrame)
+local knob = Instance.new("Frame")
+knob.Parent = toggleBG
 knob.Size = UDim2.new(0.5,0,1,0)
 knob.Position = UDim2.new(0,0,0,0)
 knob.BackgroundColor3 = Theme.BG
 Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
--- Toggle logic
 local autoEquipEnabled = false
-switchFrame.InputBegan:Connect(function(input)
+toggleBG.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		autoEquipEnabled = not autoEquipEnabled
 		if autoEquipEnabled then
-			knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
-			switchFrame.BackgroundColor3 = Theme.Accent
+			knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
+			toggleBG.BackgroundColor3 = Theme.Accent
 		else
-			knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
-			switchFrame.BackgroundColor3 = Color3.fromRGB(90,90,90)
+			knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
+			toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
 		end
 	end
 end)
 
--- ===== Auto Equip Rod Logic =====
+-- ===== Auto Equip Logic =====
+local Backpack = LocalPlayer:WaitForChild("Backpack")
 RunService.Heartbeat:Connect(function()
 	if autoEquipEnabled and LocalPlayer.Character then
 		local char = LocalPlayer.Character
-		local equipped = char:FindFirstChildWhichIsA("Tool")
-		local rod = Backpack:FindFirstChild("FishingRod") or char:FindFirstChild("FishingRod")
-		if rod and equipped ~= rod then
-			rod.Parent = char -- equip
+		local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+		if humanoid then
+			local rod = Backpack:FindFirstChild("FishingRod") or char:FindFirstChild("FishingRod")
+			if rod and humanoid and humanoid:FindFirstChildWhichIsA("Tool") ~= rod then
+				humanoid:EquipTool(rod)
+			end
 		end
 	end
 end)
 
 -- ===== CAST INTERVAL CARD =====
 local cardInterval, bodyInterval = createToggleCard(Scroll, "Cast Interval")
-
 local sliderBtn = Instance.new("TextButton", bodyInterval)
 sliderBtn.Size = UDim2.new(1,-32,0,30)
 sliderBtn.Position = UDim2.new(0,16,0,0)
