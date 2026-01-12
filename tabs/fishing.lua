@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Fishing Support Full Fix
+-- tabs/fishing.lua — Fishing Support Full Fix Final
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -138,10 +138,15 @@ local function createAutoEquipRow(parent)
 		end
 	end)
 
+	-- Auto Equip Rod fix loop: hanya jika belum di tangan
 	RunService.Heartbeat:Connect(function()
 		if enabled and LocalPlayer.Character then
 			pcall(function()
-				EquipToolFromHotbar:FireServer(1)
+				local char = LocalPlayer.Character
+				local tool = char:FindFirstChildOfClass("Tool")
+				if not tool or not tool.Name:lower():find("rod") then
+					EquipToolFromHotbar:FireServer(1)
+				end
 			end)
 		end
 	end)
