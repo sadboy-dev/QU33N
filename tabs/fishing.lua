@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Auto Equip Rod (Final Stable)
+-- tabs/fishing.lua — Fishing Support (Auto Equip Rod)
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -80,13 +80,12 @@ end
 -- ===== FISHING SUPPORT CARD =====
 local cardFishing, bodyFishing = createToggleCard(Scroll, "Fishing Support")
 
--- Row
+-- Row: Auto Equip Rod
 local row = Instance.new("Frame")
 row.Size = UDim2.new(1,0,0,36)
 row.BackgroundTransparency = 1
 row.Parent = bodyFishing
 
--- Label
 local label = Instance.new("TextLabel")
 label.Parent = row
 label.Size = UDim2.new(0.65,0,1,0)
@@ -99,11 +98,11 @@ label.Text = "Auto Equip Rod"
 label.TextXAlignment = Enum.TextXAlignment.Left
 label.TextYAlignment = Enum.TextYAlignment.Center
 
--- Small circle toggle
+-- Toggle kecil kanan
 local toggleBG = Instance.new("Frame")
 toggleBG.Parent = row
 toggleBG.Size = UDim2.new(0,36,0,20)
-toggleBG.Position = UDim2.new(0.8,0,0.5,-10) -- geser ke kanan
+toggleBG.Position = UDim2.new(0.8,0,0.5,-10)
 toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
 Instance.new("UICorner", toggleBG).CornerRadius = UDim.new(1,0)
 
@@ -129,21 +128,19 @@ toggleBG.InputBegan:Connect(function(input)
 	end
 end)
 
--- ===== Auto Equip Rod Logic (menggunakan remote EquipToolFromHotbar) =====
+-- ===== AUTO EQUIP ROD LOGIC =====
 local netFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
 local EquipToolFromHotbar = netFolder:WaitForChild("RE/EquipToolFromHotbar")
 
 RunService.Heartbeat:Connect(function()
 	if autoEquipEnabled and LocalPlayer.Character then
-		local rod = LocalPlayer.Backpack:FindFirstChild("FishingRod") or LocalPlayer.Character:FindFirstChild("FishingRod")
-		if rod then
-			-- gunakan remote server untuk equip tool
-			EquipToolFromHotbar:FireServer("FishingRod")
-		end
+		pcall(function()
+			EquipToolFromHotbar:FireServer(1) -- slot 1, pastikan rod ada di slot pertama
+		end)
 	end
 end)
 
--- Set tab active
+-- Set tab aktif
 if _G.SelectTab then
 	_G.SelectTab("Fishing")
 end
