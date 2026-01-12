@@ -101,7 +101,6 @@ local function createAutoEquipRow(parent)
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.TextYAlignment = Enum.TextYAlignment.Center
 
-	-- Toggle kecil kanan
 	local toggleBG = Instance.new("Frame")
 	toggleBG.Parent = row
 	toggleBG.Size = UDim2.new(0,36,0,20)
@@ -117,6 +116,8 @@ local function createAutoEquipRow(parent)
 	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
 	local enabled = false
+	local netFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+	local EquipToolFromHotbar = netFolder:WaitForChild("RE/EquipToolFromHotbar")
 
 	toggleBG.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -136,10 +137,6 @@ local function createAutoEquipRow(parent)
 			end
 		end
 	end)
-
-	-- Auto Equip Logic
-	local netFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-	local EquipToolFromHotbar = netFolder:WaitForChild("RE/EquipToolFromHotbar")
 
 	RunService.Heartbeat:Connect(function()
 		if enabled and LocalPlayer.Character then
@@ -216,7 +213,13 @@ local function createNoAnimRow(parent)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			noAnimEnabled = not noAnimEnabled
 			setGameAnimationsEnabled(noAnimEnabled)
-			-- Notify
+			if noAnimEnabled then
+				knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+				toggleBG.BackgroundColor3 = Theme.Accent
+			else
+				knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+				toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
+			end
 			pcall(function()
 				StarterGui:SetCore("SendNotification", {
 					Title = label.Text,
