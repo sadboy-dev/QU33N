@@ -1,4 +1,4 @@
---// QU33N UI v5 – GUI CORE (Enum Safe + Logo ⚡)
+--// QU33N UI v5 – GUI CORE (Enum Safe + Logo ⚡ draggable)
 repeat task.wait() until game:IsLoaded()
 task.wait(0.5)
 
@@ -133,7 +133,7 @@ MinBtn.BackgroundColor3 = Theme.Panel
 MinBtn.AutoButtonColor = true
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0,6)
 
--- Logo ⚡
+-- Logo ⚡ (cross-platform draggable)
 local logo = Instance.new("TextButton", ScreenGui)
 logo.Text="⚡"
 logo.Font=Enum.Font.GothamBold
@@ -143,32 +143,44 @@ logo.Size = UDim2.new(0,44,0,44)
 logo.Position = UDim2.new(0,20,0.5,-22)
 logo.BackgroundColor3=Color3.fromRGB(15,15,20)
 logo.Visible=false
+logo.AnchorPoint = Vector2.new(0,0.5)
 Instance.new("UICorner",logo).CornerRadius = UDim.new(1,0)
 
--- Drag function
+-- Drag logo (mouse + touch)
 do
-    local dragging, dragStart, startPos
+    local dragging = false
+    local dragStart = Vector2.new()
+    local startPos = UDim2.new()
+
+    local function startDrag(input)
+        dragging = true
+        dragStart = input.Position
+        startPos = logo.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+
     logo.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = logo.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            startDrag(input)
         end
     end)
+
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            logo.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                      startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            logo.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
 
+-- Klik logo restore GUI
 logo.MouseButton1Click:Connect(function()
     Main.Visible = true
     logo.Visible = false
@@ -301,4 +313,4 @@ _G.QU33N = {
     Logo = logo
 }
 
-notify("QU33N GUI Loaded (Enum Safe + Logo ⚡)")
+notify("QU33N GUI Loaded (Enum Safe + Logo ⚡ draggable)")
