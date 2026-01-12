@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Fishing Support Final
+-- tabs/fishing.lua — Fishing Support Full Fix
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
