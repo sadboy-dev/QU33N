@@ -10,14 +10,22 @@ local Theme = UI.Theme
 -- Bersihkan page (aman untuk reload)
 page:ClearAllChildren()
 
--- === SCROLL FRAME ===
+-- === SCROLL FRAME (VERTICAL ONLY) ===
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Parent = page
 Scroll.Size = UDim2.new(1, 0, 1, 0)
+
+-- KUNCI HORIZONTAL
 Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+Scroll.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+
+-- Scrollbar
 Scroll.ScrollBarThickness = 4
 Scroll.ScrollBarImageTransparency = 0.6
+
+-- Visual
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
 
