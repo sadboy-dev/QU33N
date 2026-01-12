@@ -1,9 +1,14 @@
--- tabs/fishing.lua (FINAL V2 — Fishing Support + Cast Interval)
+-- tabs/fishing.lua (FINAL + Auto Equip Rod ON/OFF)
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
 local page = UI.Pages.Fishing
 local Theme = UI.Theme
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer:WaitForChild("Backpack")
+local PlayerCharacter = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
 page:ClearAllChildren()
 
@@ -24,7 +29,7 @@ local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0,14)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Card helper
+-- ===== CARD FUNCTION =====
 local function createToggleCard(parent, title)
 	local Card = Instance.new("Frame", parent)
 	Card.Size = UDim2.new(1,-6,0,50)
@@ -73,7 +78,7 @@ local function createToggleCard(parent, title)
 	return Card, Body
 end
 
--- ===== Fishing Support Card =====
+-- ===== FISHING SUPPORT CARD =====
 local cardFishing, bodyFishing = createToggleCard(Scroll, "Fishing Support")
 
 -- Row container
@@ -107,6 +112,7 @@ knob.Position = UDim2.new(0,0,0,0)
 knob.BackgroundColor3 = Theme.BG
 Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
+-- Toggle logic
 local autoEquipEnabled = false
 switchFrame.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -118,12 +124,22 @@ switchFrame.InputBegan:Connect(function(input)
 			knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
 			switchFrame.BackgroundColor3 = Color3.fromRGB(90,90,90)
 		end
-		print("Auto Equip Rod:", autoEquipEnabled)
-		-- TODO: implement actual equip logic
 	end
 end)
 
--- ===== Cast Interval Card =====
+-- ===== Auto Equip Rod Logic =====
+RunService.Heartbeat:Connect(function()
+	if autoEquipEnabled and LocalPlayer.Character then
+		local char = LocalPlayer.Character
+		local equipped = char:FindFirstChildWhichIsA("Tool")
+		local rod = Backpack:FindFirstChild("FishingRod") or char:FindFirstChild("FishingRod")
+		if rod and equipped ~= rod then
+			rod.Parent = char -- equip
+		end
+	end
+end)
+
+-- ===== CAST INTERVAL CARD =====
 local cardInterval, bodyInterval = createToggleCard(Scroll, "Cast Interval")
 
 local sliderBtn = Instance.new("TextButton", bodyInterval)
@@ -143,7 +159,6 @@ sliderBtn.MouseButton1Click:Connect(function()
 		intervalValue = 0.5
 	end
 	sliderBtn.Text = ("Interval: %.1fs"):format(intervalValue)
-	print("Cast interval:", intervalValue)
 end)
 
 -- Set tab active
