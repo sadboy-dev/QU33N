@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Fishing Support (Auto Equip Rod + Dynamic Notify)
+-- tabs/fishing.lua — Fishing Support Final
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -82,81 +82,153 @@ end
 -- ===== FISHING SUPPORT CARD =====
 local cardFishing, bodyFishing = createToggleCard(Scroll, "Fishing Support")
 
--- Row: Auto Equip Rod
-local row = Instance.new("Frame")
-row.Size = UDim2.new(1,0,0,36)
-row.BackgroundTransparency = 1
-row.Parent = bodyFishing
+-- ===== Auto Equip Rod =====
+local function createAutoEquipRow(parent)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1,0,0,36)
+	row.BackgroundTransparency = 1
+	row.Parent = parent
 
-local label = Instance.new("TextLabel")
-label.Parent = row
-label.Size = UDim2.new(0.65,0,1,0)
-label.Position = UDim2.new(0,16,0,0)
-label.BackgroundTransparency = 1
-label.Font = Enum.Font.Gotham
-label.TextSize = 14
-label.TextColor3 = Theme.Text
-label.Text = "Auto Equip Rod"
-label.TextXAlignment = Enum.TextXAlignment.Left
-label.TextYAlignment = Enum.TextYAlignment.Center
+	local label = Instance.new("TextLabel")
+	label.Parent = row
+	label.Size = UDim2.new(0.65,0,1,0)
+	label.Position = UDim2.new(0,16,0,0)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextColor3 = Theme.Text
+	label.Text = "Auto Equip Rod"
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Center
 
--- Toggle kecil kanan
-local toggleBG = Instance.new("Frame")
-toggleBG.Parent = row
-toggleBG.Size = UDim2.new(0,36,0,20)
-toggleBG.Position = UDim2.new(0.8,0,0.5,-10)
-toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
-Instance.new("UICorner", toggleBG).CornerRadius = UDim.new(1,0)
+	-- Toggle kecil kanan
+	local toggleBG = Instance.new("Frame")
+	toggleBG.Parent = row
+	toggleBG.Size = UDim2.new(0,36,0,20)
+	toggleBG.Position = UDim2.new(0.8,0,0.5,-10)
+	toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
+	Instance.new("UICorner", toggleBG).CornerRadius = UDim.new(1,0)
 
-local knob = Instance.new("Frame")
-knob.Parent = toggleBG
-knob.Size = UDim2.new(0.5,0,1,0)
-knob.Position = UDim2.new(0,0,0,0)
-knob.BackgroundColor3 = Theme.BG
-Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+	local knob = Instance.new("Frame")
+	knob.Parent = toggleBG
+	knob.Size = UDim2.new(0.5,0,1,0)
+	knob.Position = UDim2.new(0,0,0,0)
+	knob.BackgroundColor3 = Theme.BG
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
--- Toggle logic dengan notify dinamis
-local autoEquipEnabled = false
-toggleBG.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		autoEquipEnabled = not autoEquipEnabled
-		if autoEquipEnabled then
-			knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
-			toggleBG.BackgroundColor3 = Theme.Accent
-			-- Notify ON dengan nama fitur
+	local enabled = false
+
+	toggleBG.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			enabled = not enabled
+			if enabled then
+				knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
+				toggleBG.BackgroundColor3 = Theme.Accent
+				pcall(function()
+					StarterGui:SetCore("SendNotification", {Title = label.Text, Text = "Actived", Duration = 2})
+				end)
+			else
+				knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
+				toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
+				pcall(function()
+					StarterGui:SetCore("SendNotification", {Title = label.Text, Text = "Deactived", Duration = 2})
+				end)
+			end
+		end
+	end)
+
+	-- Auto Equip Logic
+	local netFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+	local EquipToolFromHotbar = netFolder:WaitForChild("RE/EquipToolFromHotbar")
+
+	RunService.Heartbeat:Connect(function()
+		if enabled and LocalPlayer.Character then
 			pcall(function()
-				StarterGui:SetCore("SendNotification", {
-					Title = label.Text,
-					Text = "Actived",
-					Duration = 2
-				})
+				EquipToolFromHotbar:FireServer(1)
 			end)
-		else
-			knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
-			toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
-			-- Notify OFF dengan nama fitur
+		end
+	end)
+end
+
+createAutoEquipRow(bodyFishing)
+
+-- ===== No Animation Fishing =====
+local function createNoAnimRow(parent)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1,0,0,36)
+	row.BackgroundTransparency = 1
+	row.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Parent = row
+	label.Size = UDim2.new(0.65,0,1,0)
+	label.Position = UDim2.new(0,16,0,0)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextColor3 = Theme.Text
+	label.Text = "No Animation Fishing"
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Center
+
+	local toggleBG = Instance.new("Frame")
+	toggleBG.Parent = row
+	toggleBG.Size = UDim2.new(0,36,0,20)
+	toggleBG.Position = UDim2.new(0.8,0,0.5,-10)
+	toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
+	Instance.new("UICorner", toggleBG).CornerRadius = UDim.new(1,0)
+
+	local knob = Instance.new("Frame")
+	knob.Parent = toggleBG
+	knob.Size = UDim2.new(0.5,0,1,0)
+	knob.Position = UDim2.new(0,0,0,0)
+	knob.BackgroundColor3 = Theme.BG
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+
+	local noAnimEnabled = false
+	local stopAnimConnections = {}
+
+	local function setGameAnimationsEnabled(state)
+		local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if not humanoid then return end
+
+		for _, conn in pairs(stopAnimConnections) do
+			pcall(function() conn:Disconnect() end)
+		end
+		stopAnimConnections = {}
+
+		if state then
+			local animator = humanoid:FindFirstChildOfClass("Animator")
+			if animator then
+				for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+					pcall(function() track:Stop(0) end)
+				end
+				local conn = animator.AnimationPlayed:Connect(function(track)
+					task.defer(function() pcall(function() track:Stop(0) end) end)
+				end)
+				table.insert(stopAnimConnections, conn)
+			end
+		end
+	end
+
+	toggleBG.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			noAnimEnabled = not noAnimEnabled
+			setGameAnimationsEnabled(noAnimEnabled)
+			-- Notify
 			pcall(function()
 				StarterGui:SetCore("SendNotification", {
 					Title = label.Text,
-					Text = "Deactived",
+					Text = noAnimEnabled and "Actived" or "Deactived",
 					Duration = 2
 				})
 			end)
 		end
-	end
-end)
+	end)
+end
 
--- ===== AUTO EQUIP ROD LOGIC =====
-local netFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-local EquipToolFromHotbar = netFolder:WaitForChild("RE/EquipToolFromHotbar")
-
-RunService.Heartbeat:Connect(function()
-	if autoEquipEnabled and LocalPlayer.Character then
-		pcall(function()
-			EquipToolFromHotbar:FireServer(1) -- slot 1, pastikan rod ada di slot pertama
-		end)
-	end
-end)
+createNoAnimRow(bodyFishing)
 
 -- Set tab aktif
 if _G.SelectTab then
