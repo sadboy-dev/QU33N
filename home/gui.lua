@@ -1,4 +1,4 @@
---// QU33N UI v2 – GUI CORE (ENUM SAFE)
+--// QU33N UI v3 – GUI CORE (Enum Safe + Logo Fix)
 repeat task.wait() until game:IsLoaded()
 task.wait(0.5)
 
@@ -8,7 +8,6 @@ local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Notify
 local function notify(text)
@@ -146,7 +145,8 @@ local function createMiniLogo()
     logo.Font = Enum.Font.GothamBold
     logo.TextScaled = true
     logo.AnchorPoint = Vector2.new(0.5,0.5)
-    logo.Parent = PlayerGui
+    logo.ZIndex = 100
+    logo.Parent = CoreGui
 
     Instance.new("UICorner", logo).CornerRadius = UDim.new(1,0)
 
@@ -172,7 +172,7 @@ local function createMiniLogo()
         end
     end)
 
-    -- Restore GUI
+    -- Klik logo untuk restore GUI
     logo.MouseButton1Click:Connect(function()
         Main.Visible = true
         logo:Destroy()
