@@ -9,7 +9,9 @@ end
 load("home/gui.lua")
 
 -- 2. LOAD TAB CONTENT
-load("tabs/info.lua")
+loadstring(game:HttpGet(load("tabs/info.lua"))()(pageList.Info, Theme)
+
+-- load("tabs/info.lua")
 load("tabs/fishing.lua")
 load("tabs/auto.lua")
 load("tabs/teleport.lua")
