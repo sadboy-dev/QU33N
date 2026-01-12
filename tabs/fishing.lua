@@ -1,164 +1,224 @@
---// QU33N – FISHING TAB EXPANDABLE FIXED 100%
+-- tabs/fishing.lua
+-- Tunggu GUI bridge siap
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
 local page = UI.Pages.Fishing
 local Theme = UI.Theme
-local UserInputService = game:GetService("UserInputService")
 
+-- Bersihkan page (aman untuk reload)
 page:ClearAllChildren()
 
--- SCROLL FRAME
+-- === SCROLL FRAME ===
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Parent = page
 Scroll.Size = UDim2.new(1,0,1,0)
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+Scroll.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+Scroll.ScrollBarThickness = 4
+Scroll.ScrollBarImageTransparency = 0.6
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
-Scroll.ScrollBarThickness = 6
-Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
 
-local Padding = Instance.new("UIPadding", Scroll)
+-- Padding
+local Padding = Instance.new("UIPadding")
 Padding.PaddingTop = UDim.new(0,8)
 Padding.PaddingLeft = UDim.new(0,4)
 Padding.PaddingRight = UDim.new(0,4)
+Padding.Parent = Scroll
 
+-- Layout
 local Layout = Instance.new("UIListLayout", Scroll)
-Layout.Padding = UDim.new(0,12)
+Layout.Padding = UDim.new(0,14)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- CARD BUILDER EXPANDABLE
-local function createFeatureCard(titleText, descText)
+-- ===== EXPANDABLE CARD FUNCTION =====
+local function createToggleCard(parent, title, description)
 	local Card = Instance.new("Frame")
+	Card.Parent = parent
+	Card.Size = UDim2.new(1,-6,0,50)
 	Card.BackgroundColor3 = Theme.Panel
 	Card.BorderSizePixel = 0
-	Card.AutomaticSize = Enum.AutomaticSize.Y
-	Card.Size = UDim2.new(1,-6,0,50)
 	Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
-	Card.Parent = Scroll
 
-	-- Title button
-	local Title = Instance.new("TextButton")
-	Title.Parent = Card
-	Title.Size = UDim2.new(1,0,0,50)
-	Title.BackgroundTransparency = 1
-	Title.Font = Enum.Font.GothamBold
-	Title.TextSize = 16
-	Title.TextColor3 = Theme.Accent
-	Title.Text = titleText
-	Title.TextXAlignment = Enum.TextXAlignment.Left
-	Title.TextYAlignment = Enum.TextYAlignment.Center
-	Title.ClipsDescendants = true
+	-- Judul button
+	local TitleBtn = Instance.new("TextButton", Card)
+	TitleBtn.Size = UDim2.new(1,0,0,50)
+	TitleBtn.BackgroundTransparency = 1
+	TitleBtn.Font = Enum.Font.GothamBold
+	TitleBtn.TextSize = 16
+	TitleBtn.TextColor3 = Theme.Accent
+	TitleBtn.Text = title
+	TitleBtn.TextXAlignment = Enum.TextXAlignment.Left
+	TitleBtn.TextYAlignment = Enum.TextYAlignment.Center
+	TitleBtn.Position = UDim2.new(0,16,0,0)
 
-	-- Container content
-	local Content = Instance.new("Frame")
-	Content.Parent = Card
-	Content.BackgroundTransparency = 1
-	Content.Size = UDim2.new(1,0,0,0)
-	Content.AutomaticSize = Enum.AutomaticSize.Y
-	Content.ClipsDescendants = true
+	-- Body (hidden awal)
+	local Body = Instance.new("Frame", Card)
+	Body.Size = UDim2.new(1,0,0,0)
+	Body.Position = UDim2.new(0,0,0,50)
+	Body.BackgroundTransparency = 1
+	Body.ClipsDescendants = true
 
-	local innerLayout = Instance.new("UIListLayout", Content)
-	innerLayout.Padding = UDim.new(0,6)
-	innerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	innerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	local BodyLayout = Instance.new("UIListLayout", Body)
+	BodyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	BodyLayout.Padding = UDim.new(0,6)
 
-	-- Desc inside content
-	local Desc = Instance.new("TextLabel")
-	Desc.Parent = Content
-	Desc.Size = UDim2.new(1,-32,0,0)
-	Desc.BackgroundTransparency = 1
-	Desc.Text = descText
-	Desc.TextColor3 = Theme.SubText
-	Desc.TextWrapped = true
-	Desc.Font = Enum.Font.Gotham
-	Desc.TextXAlignment = Enum.TextXAlignment.Left
-	Desc.TextYAlignment = Enum.TextYAlignment.Top
+	local DescLabel = Instance.new("TextLabel", Body)
+	DescLabel.Size = UDim2.new(1,-32,0,40)
+	DescLabel.Position = UDim2.new(0,16,0,0)
+	DescLabel.Text = description
+	DescLabel.Font = Enum.Font.Gotham
+	DescLabel.TextSize = 13
+	DescLabel.TextColor3 = Theme.SubText
+	DescLabel.BackgroundTransparency = 1
+	DescLabel.TextWrapped = true
+	DescLabel.TextXAlignment = Enum.TextXAlignment.Left
+	DescLabel.TextYAlignment = Enum.TextYAlignment.Top
 
 	local expanded = false
-	Title.MouseButton1Click:Connect(function()
-		expanded = not expanded
+
+	local function updateCardSize()
 		if expanded then
-			Desc.Size = UDim2.new(1,-32,0,40) -- tinggi otomatis bisa ditambah sesuai content
+			local bodyHeight = 0
+			for _,v in pairs(Body:GetChildren()) do
+				if v:IsA("GuiObject") then
+					bodyHeight += v.AbsoluteSize.Y
+				end
+			end
+			Card.Size = UDim2.new(1,-6,0,50 + bodyHeight + 12)
+			Body:TweenSize(UDim2.new(1,0,0,bodyHeight), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
 		else
-			Desc.Size = UDim2.new(1,-32,0,0)
+			Body:TweenSize(UDim2.new(1,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
+			Card.Size = UDim2.new(1,-6,0,50)
+		end
+	end
+
+	TitleBtn.MouseButton1Click:Connect(function()
+		expanded = not expanded
+		updateCardSize()
+	end)
+
+	return Card, Body
+end
+
+-- ===== DROPDOWN FUNCTION =====
+local function createDropdown(parent, labelText, options, default, callback)
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1,-20,0,36)
+	container.BackgroundTransparency = 1
+	container.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Parent = container
+	label.Size = UDim2.new(1,-10,1,0)
+	label.Position = UDim2.new(0,10,0,0)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextColor3 = Theme.Text
+	label.Text = labelText .. ": " .. (default or "")
+
+	local dropdownBtn = Instance.new("TextButton")
+	dropdownBtn.Parent = container
+	dropdownBtn.Size = UDim2.new(1,-10,1,0)
+	dropdownBtn.Position = UDim2.new(0,10,0,0)
+	dropdownBtn.Text = ""
+	dropdownBtn.BackgroundTransparency = 1
+
+	local listFrame = Instance.new("Frame")
+	listFrame.Parent = container
+	listFrame.Size = UDim2.new(1,0,0,0)
+	listFrame.Position = UDim2.new(0,0,1,0)
+	listFrame.BackgroundColor3 = Theme.Panel
+	listFrame.BorderSizePixel = 0
+	listFrame.ClipsDescendants = true
+	Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0,6)
+
+	local layout = Instance.new("UIListLayout", listFrame)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0,4)
+
+	local expanded = false
+	local function closeDropdown()
+		expanded = false
+		listFrame:TweenSize(UDim2.new(1,0,0,0),"Out","Quad",0.2,true)
+	end
+	local function openDropdown()
+		expanded = true
+		listFrame:TweenSize(UDim2.new(1,0,0,#options*30),"Out","Quad",0.2,true)
+	end
+
+	dropdownBtn.MouseButton1Click:Connect(function()
+		if expanded then
+			closeDropdown()
+		else
+			openDropdown()
 		end
 	end)
 
-	return Card, Content
+	for _,opt in ipairs(options) do
+		local btn = Instance.new("TextButton")
+		btn.Parent = listFrame
+		btn.Size = UDim2.new(1,0,0,30)
+		btn.BackgroundColor3 = Theme.BG
+		btn.TextColor3 = Theme.Text
+		btn.Font = Enum.Font.Gotham
+		btn.TextSize = 14
+		btn.Text = opt
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+		btn.MouseButton1Click:Connect(function()
+			label.Text = labelText .. ": " .. opt
+			if callback then callback(opt) end
+			closeDropdown()
+		end)
+	end
+
+	return container
 end
 
--- ===== FISHING FEATURES =====
-local autoCastCard, autoCastContent = createFeatureCard("Auto Cast", "Otomatis melempar pancing.")
-local autoCastBtn = Instance.new("TextButton", autoCastContent)
-autoCastBtn.Size = UDim2.new(1,-32,0,40)
-autoCastBtn.BackgroundColor3 = Theme.Panel
-autoCastBtn.TextColor3 = Theme.Text
-autoCastBtn.Font = Enum.Font.Gotham
-autoCastBtn.TextSize = 16
-autoCastBtn.Text = "OFF"
-Instance.new("UICorner", autoCastBtn).CornerRadius = UDim.new(0,6)
-local autoCastEnabled = false
-autoCastBtn.MouseButton1Click:Connect(function()
-	autoCastEnabled = not autoCastEnabled
-	autoCastBtn.Text = autoCastEnabled and "ON" or "OFF"
+-- ===== CONTENT =====
+-- Card: Auto Cast
+local cardAutoCast, bodyAuto = createToggleCard(Scroll,"Auto Cast","Nyalakan atau matikan auto cast pancing.")
+local toggleBtn = Instance.new("TextButton", bodyAuto)
+toggleBtn.Size = UDim2.new(1,-32,0,30)
+toggleBtn.Position = UDim2.new(0,16,0,0)
+toggleBtn.BackgroundColor3 = Theme.BG
+toggleBtn.TextColor3 = Theme.Text
+toggleBtn.Text = "Toggle Auto Cast"
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0,8)
+toggleBtn.MouseButton1Click:Connect(function()
+	print("Auto Cast Toggled")
 end)
 
-local autoReelCard, autoReelContent = createFeatureCard("Auto Reel", "Reel otomatis saat ikan menggigit.")
-local autoReelBtn = Instance.new("TextButton", autoReelContent)
-autoReelBtn.Size = UDim2.new(1,-32,0,40)
-autoReelBtn.BackgroundColor3 = Theme.Panel
-autoReelBtn.TextColor3 = Theme.Text
-autoReelBtn.Font = Enum.Font.Gotham
-autoReelBtn.TextSize = 16
-autoReelBtn.Text = "OFF"
-Instance.new("UICorner", autoReelBtn).CornerRadius = UDim.new(0,6)
-local autoReelEnabled = false
-autoReelBtn.MouseButton1Click:Connect(function()
-	autoReelEnabled = not autoReelEnabled
-	autoReelBtn.Text = autoReelEnabled and "ON" or "OFF"
+-- Card: Fishing Mode
+createDropdown(Scroll,"Fishing Mode",{"Manual","Auto","Fast"},"Manual",function(val)
+	print("Mode dipilih:",val)
 end)
 
--- Slider Cast Interval
-local intervalCard, intervalContent = createFeatureCard("Cast Interval", "Atur interval lempar pancing (detik).")
-local intervalSliderFrame = Instance.new("Frame", intervalContent)
-intervalSliderFrame.Size = UDim2.new(1,-32,0,30)
-intervalSliderFrame.BackgroundColor3 = Theme.Panel
-Instance.new("UICorner", intervalSliderFrame).CornerRadius = UDim.new(0,6)
-
-local sliderBar = Instance.new("Frame", intervalSliderFrame)
-sliderBar.Size = UDim2.new(0.5,0,1,0)
-sliderBar.BackgroundColor3 = Theme.Accent
-Instance.new("UICorner", sliderBar).CornerRadius = UDim.new(0,6)
-
-local sliderLabel = Instance.new("TextLabel", intervalSliderFrame)
-sliderLabel.Size = UDim2.new(1,0,1,0)
-sliderLabel.Text = "1.0 s"
-sliderLabel.Font = Enum.Font.Gotham
-sliderLabel.TextSize = 14
-sliderLabel.TextColor3 = Theme.Text
-sliderLabel.BackgroundTransparency = 1
-sliderLabel.TextXAlignment = Enum.TextXAlignment.Center
-
-local dragging = false
-sliderBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-	end
-end)
-sliderBar.InputEnded:Connect(function(input)
-	dragging = false
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local relPos = math.clamp(input.Position.X - intervalSliderFrame.AbsolutePosition.X,0,intervalSliderFrame.AbsoluteSize.X)
-		sliderBar.Size = UDim2.new(0, relPos,1,0)
-		sliderLabel.Text = string.format("%.1f s", (relPos/intervalSliderFrame.AbsoluteSize.X)*5)
-	end
+-- Card: Cast Interval
+local cardInterval, bodyInterval = createToggleCard(Scroll,"Cast Interval","Atur interval lempar pancing.")
+local slider = Instance.new("TextButton", bodyInterval)
+slider.Size = UDim2.new(1,-32,0,30)
+slider.Position = UDim2.new(0,16,0,0)
+slider.BackgroundColor3 = Theme.BG
+slider.TextColor3 = Theme.Text
+slider.Text = "Interval: 1s"
+Instance.new("UICorner", slider).CornerRadius = UDim.new(0,8)
+-- Contoh simple slider logic
+local value = 1
+slider.MouseButton1Click:Connect(function()
+	value += 1
+	if value>5 then value=1 end
+	slider.Text = "Interval: "..value.."s"
+	print("Cast interval:",value)
 end)
 
--- Canvas update otomatis
-Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	Scroll.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y)
-end)
+-- Set default active tab Fishing
+if _G.SelectTab then
+	_G.SelectTab("Fishing")
+end
