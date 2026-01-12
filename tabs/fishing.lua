@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Fishing Support (Auto Equip Rod + Notify)
+-- tabs/fishing.lua — Fishing Support (Auto Equip Rod + Dynamic Notify)
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
+-- Bersihkan page
 page:ClearAllChildren()
 
 -- Scroll Frame
@@ -114,7 +115,7 @@ knob.Position = UDim2.new(0,0,0,0)
 knob.BackgroundColor3 = Theme.BG
 Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
--- Toggle logic
+-- Toggle logic dengan notify dinamis
 local autoEquipEnabled = false
 toggleBG.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -122,10 +123,10 @@ toggleBG.InputBegan:Connect(function(input)
 		if autoEquipEnabled then
 			knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
 			toggleBG.BackgroundColor3 = Theme.Accent
-			-- Notify ON
+			-- Notify ON dengan nama fitur
 			pcall(function()
 				StarterGui:SetCore("SendNotification", {
-					Title = "<Featured>",
+					Title = label.Text,
 					Text = "Actived",
 					Duration = 2
 				})
@@ -133,10 +134,10 @@ toggleBG.InputBegan:Connect(function(input)
 		else
 			knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
 			toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
-			-- Notify OFF
+			-- Notify OFF dengan nama fitur
 			pcall(function()
 				StarterGui:SetCore("SendNotification", {
-					Title = "<Featured>",
+					Title = label.Text,
 					Text = "Deactived",
 					Duration = 2
 				})
