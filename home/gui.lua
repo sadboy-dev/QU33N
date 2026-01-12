@@ -1,6 +1,4 @@
---// QU33N UI v2 – GUI CORE (FIXED GLOBAL BRIDGE)
---// DO NOT PUT TAB CONTENT HERE
-
+--// QU33N UI v2 – GUI CORE (ENUM SAFE)
 repeat task.wait() until game:IsLoaded()
 task.wait(0.5)
 
@@ -9,7 +7,7 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
 
--- Notification
+-- Notify
 local function notify(text)
 	pcall(function()
 		StarterGui:SetCore("SendNotification", {
@@ -25,7 +23,7 @@ local isMobile = UserInputService.TouchEnabled
 	and not UserInputService.KeyboardEnabled
 	and not UserInputService.MouseEnabled
 
--- Clear old
+-- Clean old GUI
 if CoreGui:FindFirstChild("QU33N") then
 	CoreGui.QU33N:Destroy()
 end
@@ -39,7 +37,7 @@ local Theme = {
 	Accent = Color3.fromRGB(79,139,255)
 }
 
--- Size
+-- Responsive size
 local function responsiveSize()
 	if isMobile then
 		return UDim2.new(0.62,0,0.82,0)
@@ -52,9 +50,10 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "QU33N"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = CoreGui
 
--- Main
+-- Main frame
 local Main = Instance.new("Frame", ScreenGui)
 Main.AnchorPoint = Vector2.new(0.5,0.5)
 Main.Position = UDim2.new(0.5,0,0.52,0)
@@ -63,7 +62,7 @@ Main.BackgroundColor3 = Theme.BG
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
 
--- Drag (mobile)
+-- Drag (touch)
 do
 	local dragging, dragStart, startPos
 	Main.InputBegan:Connect(function(i)
@@ -102,9 +101,10 @@ Title.TextSize = 18
 Title.TextColor3 = Theme.Text
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1,0,1,0)
-Title.TextXAlignment = Left
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextYAlignment = Enum.TextYAlignment.Center
 
--- Tabs
+-- Tabs bar
 local TabBar = Instance.new("Frame", Main)
 TabBar.Position = UDim2.new(0,16,0,58)
 TabBar.Size = UDim2.new(1,-32,0,36)
@@ -115,10 +115,10 @@ TabsContainer.Size = UDim2.new(1,0,1,0)
 TabsContainer.BackgroundTransparency = 1
 
 local TabLayout = Instance.new("UIListLayout", TabsContainer)
-TabLayout.FillDirection = Horizontal
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
 TabLayout.Padding = UDim.new(0,3)
-TabLayout.HorizontalAlignment = Left
-TabLayout.VerticalAlignment = Center
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
 -- Pages container
 local Pages = Instance.new("Frame", Main)
@@ -131,7 +131,7 @@ Pages.ClipsDescendants = true
 local pageList = {}
 local tabButtons = {}
 
--- Tab logic
+-- Tab switch
 local function setActive(tabName)
 	for name,btn in pairs(tabButtons) do
 		btn.TextColor3 = (name == tabName) and Theme.Accent or Theme.SubText
@@ -141,6 +141,7 @@ local function setActive(tabName)
 	end
 end
 
+-- Create tab
 local function createTab(name)
 	local b = Instance.new("TextButton")
 	b.Parent = TabsContainer
@@ -151,6 +152,7 @@ local function createTab(name)
 	b.TextSize = 12
 	b.TextColor3 = Theme.SubText
 	b.BorderSizePixel = 0
+	b.AutoButtonColor = true
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,12)
 
 	b.MouseButton1Click:Connect(function()
@@ -160,6 +162,7 @@ local function createTab(name)
 	tabButtons[name] = b
 end
 
+-- Create page
 local function createPage(name)
 	local p = Instance.new("Frame", Pages)
 	p.Size = UDim2.new(1,0,1,0)
@@ -179,7 +182,7 @@ end
 RunService.Heartbeat:Wait()
 setActive("Info")
 
--- === GLOBAL GUI BRIDGE (WAJIB) ===
+-- === GLOBAL GUI BRIDGE ===
 _G.QU33N = {
 	Main = Main,
 	Tabs = tabButtons,
@@ -188,4 +191,4 @@ _G.QU33N = {
 	SelectTab = setActive
 }
 
-notify("QU33N GUI Loaded")
+notify("QU33N GUI Loaded (Enum Safe)")
