@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Auto Equip Rod saja
+-- tabs/fishing.lua — Auto Equip Rod (Final Stable)
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -6,6 +6,7 @@ local page = UI.Pages.Fishing
 local Theme = UI.Theme
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 page:ClearAllChildren()
@@ -20,8 +21,8 @@ Scroll.ScrollBarThickness = 4
 
 local Padding = Instance.new("UIPadding", Scroll)
 Padding.PaddingTop = UDim.new(0,8)
-Padding.PaddingLeft = UDim.new(0,4)
-Padding.PaddingRight = UDim.new(0,4)
+Padding.PaddingLeft = UDim.new(0,8)
+Padding.PaddingRight = UDim.new(0,8)
 
 local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0,14)
@@ -88,7 +89,7 @@ row.Parent = bodyFishing
 -- Label
 local label = Instance.new("TextLabel")
 label.Parent = row
-label.Size = UDim2.new(0.6,0,1,0)
+label.Size = UDim2.new(0.65,0,1,0)
 label.Position = UDim2.new(0,16,0,0)
 label.BackgroundTransparency = 1
 label.Font = Enum.Font.Gotham
@@ -102,7 +103,7 @@ label.TextYAlignment = Enum.TextYAlignment.Center
 local toggleBG = Instance.new("Frame")
 toggleBG.Parent = row
 toggleBG.Size = UDim2.new(0,36,0,20)
-toggleBG.Position = UDim2.new(0.75,0,0.5,-10)
+toggleBG.Position = UDim2.new(0.8,0,0.5,-10) -- geser ke kanan
 toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
 Instance.new("UICorner", toggleBG).CornerRadius = UDim.new(1,0)
 
@@ -128,15 +129,16 @@ toggleBG.InputBegan:Connect(function(input)
 	end
 end)
 
--- ===== Auto Equip Rod Logic =====
-local Backpack = LocalPlayer:WaitForChild("Backpack")
+-- ===== Auto Equip Rod Logic (menggunakan remote EquipToolFromHotbar) =====
+local netFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local EquipToolFromHotbar = netFolder:WaitForChild("RE/EquipToolFromHotbar")
+
 RunService.Heartbeat:Connect(function()
 	if autoEquipEnabled and LocalPlayer.Character then
-		local char = LocalPlayer.Character
-		local humanoid = char:FindFirstChildWhichIsA("Humanoid")
-		local rod = Backpack:FindFirstChild("FishingRod") or char:FindFirstChild("FishingRod")
-		if rod and humanoid then
-			humanoid:EquipTool(rod) -- **ini menjamin rod otomatis equip**
+		local rod = LocalPlayer.Backpack:FindFirstChild("FishingRod") or LocalPlayer.Character:FindFirstChild("FishingRod")
+		if rod then
+			-- gunakan remote server untuk equip tool
+			EquipToolFromHotbar:FireServer("FishingRod")
 		end
 	end
 end)
