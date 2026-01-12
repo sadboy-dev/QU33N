@@ -1,4 +1,4 @@
---// QU33N UI v3 – GUI CORE (Enum Safe + Logo Fix)
+--// QU33N UI v4 – GUI CORE (Enum Safe + Logo Decal Fix)
 repeat task.wait() until game:IsLoaded()
 task.wait(0.5)
 
@@ -133,22 +133,19 @@ MinBtn.BackgroundColor3 = Theme.Panel
 MinBtn.AutoButtonColor = true
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0,6)
 
--- Logo kecil Q
+-- Logo kecil Q (pakai decal)
+local LOGO_IMAGE = "rbxassetid://89413875707951"
+
 local function createMiniLogo()
-    local logo = Instance.new("TextButton")
+    local logo = Instance.new("ImageButton")
     logo.Name = "MiniLogo"
     logo.Size = UDim2.new(0,50,0,50)
     logo.Position = UDim2.new(0,20,0,100)
-    logo.BackgroundColor3 = Theme.Accent
-    logo.Text = "Q"
-    logo.TextColor3 = Theme.Text
-    logo.Font = Enum.Font.GothamBold
-    logo.TextScaled = true
     logo.AnchorPoint = Vector2.new(0.5,0.5)
     logo.ZIndex = 100
+    logo.Image = LOGO_IMAGE
+    logo.BackgroundTransparency = 1
     logo.Parent = CoreGui
-
-    Instance.new("UICorner", logo).CornerRadius = UDim.new(1,0)
 
     -- Dragging
     local dragging, dragStart, startPos
