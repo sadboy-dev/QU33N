@@ -105,82 +105,6 @@ local function createToggleCard(parent, title, description)
 	return Card, Body
 end
 
--- ===== DROPDOWN FUNCTION =====
-local function createDropdown(parent, labelText, options, default, callback)
-	local container = Instance.new("Frame")
-	container.Size = UDim2.new(1,-20,0,36)
-	container.BackgroundTransparency = 1
-	container.Parent = parent
-
-	local label = Instance.new("TextLabel")
-	label.Parent = container
-	label.Size = UDim2.new(1,-10,1,0)
-	label.Position = UDim2.new(0,10,0,0)
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
-	label.TextColor3 = Theme.Text
-	label.Text = labelText .. ": " .. (default or "")
-
-	local dropdownBtn = Instance.new("TextButton")
-	dropdownBtn.Parent = container
-	dropdownBtn.Size = UDim2.new(1,-10,1,0)
-	dropdownBtn.Position = UDim2.new(0,10,0,0)
-	dropdownBtn.Text = ""
-	dropdownBtn.BackgroundTransparency = 1
-
-	local listFrame = Instance.new("Frame")
-	listFrame.Parent = container
-	listFrame.Size = UDim2.new(1,0,0,0)
-	listFrame.Position = UDim2.new(0,0,1,0)
-	listFrame.BackgroundColor3 = Theme.Panel
-	listFrame.BorderSizePixel = 0
-	listFrame.ClipsDescendants = true
-	Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0,6)
-
-	local layout = Instance.new("UIListLayout", listFrame)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Padding = UDim.new(0,4)
-
-	local expanded = false
-	local function closeDropdown()
-		expanded = false
-		listFrame:TweenSize(UDim2.new(1,0,0,0),"Out","Quad",0.2,true)
-	end
-	local function openDropdown()
-		expanded = true
-		listFrame:TweenSize(UDim2.new(1,0,0,#options*30),"Out","Quad",0.2,true)
-	end
-
-	dropdownBtn.MouseButton1Click:Connect(function()
-		if expanded then
-			closeDropdown()
-		else
-			openDropdown()
-		end
-	end)
-
-	for _,opt in ipairs(options) do
-		local btn = Instance.new("TextButton")
-		btn.Parent = listFrame
-		btn.Size = UDim2.new(1,0,0,30)
-		btn.BackgroundColor3 = Theme.BG
-		btn.TextColor3 = Theme.Text
-		btn.Font = Enum.Font.Gotham
-		btn.TextSize = 14
-		btn.Text = opt
-		Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
-
-		btn.MouseButton1Click:Connect(function()
-			label.Text = labelText .. ": " .. opt
-			if callback then callback(opt) end
-			closeDropdown()
-		end)
-	end
-
-	return container
-end
-
 -- ===== CONTENT =====
 -- Card: Auto Cast
 local cardAutoCast, bodyAuto = createToggleCard(Scroll,"Auto Cast","Nyalakan atau matikan auto cast pancing.")
@@ -195,11 +119,6 @@ toggleBtn.MouseButton1Click:Connect(function()
 	print("Auto Cast Toggled")
 end)
 
--- Card: Fishing Mode
-createDropdown(Scroll,"Fishing Mode",{"Manual","Auto","Fast"},"Manual",function(val)
-	print("Mode dipilih:",val)
-end)
-
 -- Card: Cast Interval
 local cardInterval, bodyInterval = createToggleCard(Scroll,"Cast Interval","Atur interval lempar pancing.")
 local slider = Instance.new("TextButton", bodyInterval)
@@ -209,11 +128,11 @@ slider.BackgroundColor3 = Theme.BG
 slider.TextColor3 = Theme.Text
 slider.Text = "Interval: 1s"
 Instance.new("UICorner", slider).CornerRadius = UDim.new(0,8)
--- Contoh simple slider logic
+-- Contoh simple slider logic (klik untuk cycle)
 local value = 1
 slider.MouseButton1Click:Connect(function()
 	value += 1
-	if value>5 then value=1 end
+	if value > 5 then value = 1 end
 	slider.Text = "Interval: "..value.."s"
 	print("Cast interval:",value)
 end)
