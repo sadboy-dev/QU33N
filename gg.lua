@@ -5,7 +5,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService") -- untuk encode/decode setting
+local HttpService = game:GetService("HttpService")
 
 -- Ambil Jump Button bawaan Roblox
 local touchGui = playerGui:WaitForChild("TouchGui")
@@ -19,29 +19,46 @@ local posX = jumpButton.Position.X.Offset
 local posY = jumpButton.Position.Y.Offset
 
 -- =============================
--- Fungsi Simpan / Load Setting Local (bisa pakai DataStore jika game publis)
+-- Fungsi Clamp
+-- =============================
+local function clamp(value,min,max)
+	return math.clamp(value,min,max)
+end
+
+-- =============================
+-- Fungsi Simpan / Load Setting Local Aman
 -- =============================
 local function saveSettings()
-	local data = {
-		posX = posX,
-		posY = posY,
-		sizeX = sizeX,
-		sizeY = sizeY
-	}
-	-- Simpan di Attribute player (tetap ada walaupun respawn)
-	player:SetAttribute("JumpButtonSettings", HttpService:JSONEncode(data))
+	local success, err = pcall(function()
+		local data = {
+			posX = posX,
+			posY = posY,
+			sizeX = sizeX,
+			sizeY = sizeY
+		}
+		player:SetAttribute("JumpButtonSettings", HttpService:JSONEncode(data))
+	end)
+	if not success then
+		warn("Gagal save setting: "..tostring(err))
+	end
 end
 
 local function loadSettings()
 	local json = player:GetAttribute("JumpButtonSettings")
-	if json then
-		local data = HttpService:JSONDecode(json)
-		posX = data.posX or posX
-		posY = data.posY or posY
-		sizeX = data.sizeX or sizeX
-		sizeY = data.sizeY or sizeY
-		jumpButton.Position = UDim2.new(0,posX,0,posY)
-		jumpButton.Size = UDim2.new(0,sizeX,0,sizeY)
+	if json and json ~= "" then
+		local success, data = pcall(function()
+			return HttpService:JSONDecode(json)
+		end)
+		if success and data then
+			posX = data.posX or posX
+			posY = data.posY or posY
+			sizeX = data.sizeX or sizeX
+			sizeY = data.sizeY or sizeY
+			if jumpButton and jumpButton.Parent then
+				jumpButton.Position = UDim2.new(0,posX,0,posY)
+				jumpButton.Size = UDim2.new(0,sizeX,0,sizeY)
+			end
+		end
 	end
 end
 
@@ -160,6 +177,7 @@ local function moveJumpButton(dx, dy)
 	posX = clamp(posX,0,workspace.CurrentCamera.ViewportSize.X - jumpButton.AbsoluteSize.X)
 	posY = clamp(posY,0,workspace.CurrentCamera.ViewportSize.Y - jumpButton.AbsoluteSize.Y)
 	TweenService:Create(jumpButton,TweenInfo.new(0.1),{Position=UDim2.new(0,posX,0,posY)}):Play()
+	saveSettings()
 end
 
 up.MouseButton1Click:Connect(function() moveJumpButton(0,-10) end)
