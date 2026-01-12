@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Fishing Support (Auto Equip Rod)
+-- tabs/fishing.lua — Fishing Support (Auto Equip Rod + Notify)
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -7,6 +7,7 @@ local Theme = UI.Theme
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
 page:ClearAllChildren()
@@ -121,9 +122,25 @@ toggleBG.InputBegan:Connect(function(input)
 		if autoEquipEnabled then
 			knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
 			toggleBG.BackgroundColor3 = Theme.Accent
+			-- Notify ON
+			pcall(function()
+				StarterGui:SetCore("SendNotification", {
+					Title = "<Featured>",
+					Text = "Actived",
+					Duration = 2
+				})
+			end)
 		else
 			knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad,0.2,true)
 			toggleBG.BackgroundColor3 = Color3.fromRGB(90,90,90)
+			-- Notify OFF
+			pcall(function()
+				StarterGui:SetCore("SendNotification", {
+					Title = "<Featured>",
+					Text = "Deactived",
+					Duration = 2
+				})
+			end)
 		end
 	end
 end)
