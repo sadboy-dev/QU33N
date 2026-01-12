@@ -1,4 +1,4 @@
--- tabs/fishing.lua (FINAL)
+-- tabs/fishing.lua (FINAL COMPLETE)
 -- Tunggu GUI bridge siap
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
@@ -6,7 +6,7 @@ local UI = _G.QU33N
 local page = UI.Pages.Fishing
 local Theme = UI.Theme
 
--- Bersihkan page (aman untuk reload)
+-- Bersihkan page
 page:ClearAllChildren()
 
 -- === SCROLL FRAME ===
@@ -96,18 +96,18 @@ end
 -- ===== FISHING SUPPORT CARD =====
 local cardFishing, bodyFishing = createToggleCard(Scroll, "Fishing Support", "")
 
--- Row Auto Equip Rod
+-- Row Auto Equip Rod (toggle bulatan)
 local row = Instance.new("Frame")
-row.Size = UDim2.new(1,-32,0,30)
-row.Position = UDim2.new(0,16,0,0)
+row.Size = UDim2.new(1,0,0,30)
+row.Position = UDim2.new(0,0,0,0)
 row.BackgroundTransparency = 1
 row.Parent = bodyFishing
 
 -- Label
 local label = Instance.new("TextLabel")
 label.Parent = row
-label.Size = UDim2.new(0.7,0,1,0)
-label.Position = UDim2.new(0,0,0,0)
+label.Size = UDim2.new(0.6,0,1,0)
+label.Position = UDim2.new(0,16,0,0)
 label.BackgroundTransparency = 1
 label.Text = "Auto Equip Rod"
 label.Font = Enum.Font.Gotham
@@ -116,24 +116,36 @@ label.TextColor3 = Theme.Text
 label.TextXAlignment = Enum.TextXAlignment.Left
 label.TextYAlignment = Enum.TextYAlignment.Center
 
--- Toggle ON/OFF
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Parent = row
-toggleBtn.Size = UDim2.new(0.28,0,0.8,0)
-toggleBtn.Position = UDim2.new(0.72,0,0.1,0)
-toggleBtn.BackgroundColor3 = Theme.BG
-toggleBtn.TextColor3 = Theme.Text
-toggleBtn.Text = "OFF"
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 12
-Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0,6)
+-- Toggle Frame
+local toggleFrame = Instance.new("Frame")
+toggleFrame.Parent = row
+toggleFrame.Size = UDim2.new(0.3,0,0.5,0)
+toggleFrame.Position = UDim2.new(0.65,0,0.25,0)
+toggleFrame.BackgroundColor3 = Color3.fromRGB(80,80,80)
+Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0.5,0)
 
+-- Toggle Knob
+local knob = Instance.new("Frame")
+knob.Parent = toggleFrame
+knob.Size = UDim2.new(0.5,0,1,0)
+knob.Position = UDim2.new(0,0,0,0)
+knob.BackgroundColor3 = Color3.fromRGB(255,255,255)
+Instance.new("UICorner", knob).CornerRadius = UDim.new(0.5,0)
+
+-- Toggle logic
 local enabled = false
-toggleBtn.MouseButton1Click:Connect(function()
-	enabled = not enabled
-	toggleBtn.Text = enabled and "ON" or "OFF"
-	print("Auto Equip Rod:", enabled)
-	-- TODO: tambahkan logika equip rod global disini
+toggleFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		enabled = not enabled
+		if enabled then
+			knob:TweenPosition(UDim2.new(0.5,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+			toggleFrame.BackgroundColor3 = Theme.Accent
+		else
+			knob:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+			toggleFrame.BackgroundColor3 = Color3.fromRGB(80,80,80)
+		end
+		print("Auto Equip Rod:", enabled)
+	end
 end)
 
 -- ===== CAST INTERVAL CARD =====
