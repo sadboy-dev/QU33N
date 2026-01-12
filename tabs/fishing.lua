@@ -1,4 +1,4 @@
--- tabs/fishing.lua (FINAL V3 — Toggle Bulat + AutoEquipRod)
+-- tabs/fishing.lua — Auto Equip Rod saja
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -27,7 +27,7 @@ local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0,14)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- CARD HELPER
+-- CARD HELPER (Buka/Tutup)
 local function createToggleCard(parent, title)
 	local Card = Instance.new("Frame", parent)
 	Card.Size = UDim2.new(1,-6,0,50)
@@ -113,6 +113,7 @@ knob.Position = UDim2.new(0,0,0,0)
 knob.BackgroundColor3 = Theme.BG
 Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
+-- Toggle logic
 local autoEquipEnabled = false
 toggleBG.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -127,40 +128,17 @@ toggleBG.InputBegan:Connect(function(input)
 	end
 end)
 
--- ===== Auto Equip Logic =====
+-- ===== Auto Equip Rod Logic =====
 local Backpack = LocalPlayer:WaitForChild("Backpack")
 RunService.Heartbeat:Connect(function()
 	if autoEquipEnabled and LocalPlayer.Character then
 		local char = LocalPlayer.Character
 		local humanoid = char:FindFirstChildWhichIsA("Humanoid")
-		if humanoid then
-			local rod = Backpack:FindFirstChild("FishingRod") or char:FindFirstChild("FishingRod")
-			if rod and humanoid and humanoid:FindFirstChildWhichIsA("Tool") ~= rod then
-				humanoid:EquipTool(rod)
-			end
+		local rod = Backpack:FindFirstChild("FishingRod") or char:FindFirstChild("FishingRod")
+		if rod and humanoid then
+			humanoid:EquipTool(rod) -- **ini menjamin rod otomatis equip**
 		end
 	end
-end)
-
--- ===== CAST INTERVAL CARD =====
-local cardInterval, bodyInterval = createToggleCard(Scroll, "Cast Interval")
-local sliderBtn = Instance.new("TextButton", bodyInterval)
-sliderBtn.Size = UDim2.new(1,-32,0,30)
-sliderBtn.Position = UDim2.new(0,16,0,0)
-sliderBtn.BackgroundColor3 = Theme.BG
-sliderBtn.TextColor3 = Theme.Text
-sliderBtn.Font = Enum.Font.Gotham
-sliderBtn.TextSize = 14
-sliderBtn.Text = "Interval: 1.0s"
-Instance.new("UICorner", sliderBtn).CornerRadius = UDim.new(0,8)
-
-local intervalValue = 1
-sliderBtn.MouseButton1Click:Connect(function()
-	intervalValue = intervalValue + 0.5
-	if intervalValue > 5 then
-		intervalValue = 0.5
-	end
-	sliderBtn.Text = ("Interval: %.1fs"):format(intervalValue)
 end)
 
 -- Set tab active
