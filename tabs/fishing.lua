@@ -1,4 +1,4 @@
--- tabs/fishing.lua — Fishing Support Full Fix Final
+-- tabs/fishing.lua — Fishing Support Full Fix Event-Based
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
 local UI = _G.QU33N
@@ -82,7 +82,7 @@ end
 -- ===== FISHING SUPPORT CARD =====
 local cardFishing, bodyFishing = createToggleCard(Scroll, "Fishing Support")
 
--- ===== Auto Equip Rod =====
+-- ===== Auto Equip Rod (Event-Based) =====
 local function createAutoEquipRow(parent)
 	local row = Instance.new("Frame")
 	row.Size = UDim2.new(1,0,0,36)
@@ -138,16 +138,37 @@ local function createAutoEquipRow(parent)
 		end
 	end)
 
-	-- Auto Equip Rod fix loop: hanya jika belum di tangan
-	RunService.Heartbeat:Connect(function()
+	-- Event-based Auto Equip Rod
+	local function equipRodIfNeeded()
 		if enabled and LocalPlayer.Character then
-			pcall(function()
-				local char = LocalPlayer.Character
-				local tool = char:FindFirstChildOfClass("Tool")
-				if not tool or not tool.Name:lower():find("rod") then
+			local char = LocalPlayer.Character
+			local tool = char:FindFirstChildOfClass("Tool")
+			if not tool or not tool.Name:lower():find("rod") then
+				pcall(function()
 					EquipToolFromHotbar:FireServer(1)
-				end
+				end)
+			end
+		end
+	end
+
+	-- Cek saat rod ditambahkan ke karakter
+	if LocalPlayer.Character then
+		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
+			if child:IsA("Tool") then
+				child:GetPropertyChangedSignal("Parent"):Connect(function()
+					equipRodIfNeeded()
+				end)
+			end
+		end
+	end
+
+	-- Monitor tools baru yang masuk ke character
+	LocalPlayer.Character.ChildAdded:Connect(function(child)
+		if child:IsA("Tool") then
+			child:GetPropertyChangedSignal("Parent"):Connect(function()
+				equipRodIfNeeded()
 			end)
+			equipRodIfNeeded()
 		end
 	end)
 end
