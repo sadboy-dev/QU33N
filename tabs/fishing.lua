@@ -1,4 +1,4 @@
---// QU33N – FISHING TAB (FULL FIX FINAL)
+--// QU33N – FISHING TAB (FINAL ARROW VERSION)
 
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
@@ -30,10 +30,10 @@ List.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Instance.new("UIPadding", Scroll).PaddingTop = UDim.new(0,12)
 
 --================ NOTIFY =================--
-local function notify(title, state)
+local function notify(feature, state)
 	pcall(function()
 		StarterGui:SetCore("SendNotification",{
-			Title = title,
+			Title = feature,
 			Text = state and "Activated" or "Deactivated",
 			Duration = 2
 		})
@@ -48,7 +48,6 @@ local function createToggle(parent, text, callback)
 
 	local Label = Instance.new("TextLabel", Row)
 	Label.Size = UDim2.new(1,-80,1,0)
-	Label.Position = UDim2.new(0,0,0,0)
 	Label.BackgroundTransparency = 1
 	Label.Text = text
 	Label.Font = Enum.Font.Gotham
@@ -93,23 +92,40 @@ end
 
 --================ CARD =================--
 local Card = Instance.new("Frame", Scroll)
-Card.Size = UDim2.new(1,-20,0,52)
+Card.Size = UDim2.new(1,-20,0,54)
 Card.BackgroundColor3 = Theme.Panel
 Card.BorderSizePixel = 0
 Instance.new("UICorner",Card).CornerRadius = UDim.new(0,16)
 
+-- Header
 local Header = Instance.new("TextButton", Card)
-Header.Size = UDim2.new(1,-24,0,52)
+Header.Size = UDim2.new(1,-24,0,54)
 Header.Position = UDim2.new(0,12,0,0)
 Header.BackgroundTransparency = 1
-Header.Text = "Fishing Support"
-Header.Font = Enum.Font.GothamBold
-Header.TextSize = 16
-Header.TextXAlignment = Enum.TextXAlignment.Left
-Header.TextColor3 = Theme.Accent
+Header.Text = ""
+Header.AutoButtonColor = false
 
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1,-30,1,0)
+Title.BackgroundTransparency = 1
+Title.Text = "Fishing Support"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextColor3 = Theme.Accent
+
+local Arrow = Instance.new("TextLabel", Header)
+Arrow.Size = UDim2.new(0,24,0,24)
+Arrow.Position = UDim2.new(1,-24,0.5,-12)
+Arrow.BackgroundTransparency = 1
+Arrow.Text = "▶"
+Arrow.Font = Enum.Font.GothamBold
+Arrow.TextSize = 18
+Arrow.TextColor3 = Theme.SubText
+
+-- Body
 local Body = Instance.new("Frame", Card)
-Body.Position = UDim2.new(0,12,0,56)
+Body.Position = UDim2.new(0,12,0,58)
 Body.Size = UDim2.new(1,-24,0,0)
 Body.AutomaticSize = Enum.AutomaticSize.Y
 Body.BackgroundTransparency = 1
@@ -119,14 +135,17 @@ Body.ClipsDescendants = true
 local BodyList = Instance.new("UIListLayout", Body)
 BodyList.Padding = UDim.new(0,10)
 
+-- Open / Close
 local Open = false
 Header.MouseButton1Click:Connect(function()
 	Open = not Open
 	Body.Visible = Open
+	Arrow.Text = Open and "▼" or "▶"
+
 	task.wait()
 	Card:TweenSize(
-		Open and UDim2.new(1,-20,0,52 + Body.AbsoluteSize.Y + 12)
-		or UDim2.new(1,-20,0,52),
+		Open and UDim2.new(1,-20,0,54 + Body.AbsoluteSize.Y + 12)
+		or UDim2.new(1,-20,0,54),
 		"Out","Quad",0.25,true
 	)
 end)
@@ -151,7 +170,7 @@ createToggle(Body,"Auto Equip Rod",function(state)
 end)
 
 --================ NO ANIMATION =================--
-local stoppedTracks = {}
+local stopped = {}
 
 createToggle(Body,"No Animation Fishing",function(state)
 	local char = LocalPlayer.Character
@@ -160,27 +179,15 @@ createToggle(Body,"No Animation Fishing",function(state)
 
 	if state then
 		for _,track in ipairs(hum:GetPlayingAnimationTracks()) do
-			stoppedTracks[#stoppedTracks+1] = track.Animation
+			table.insert(stopped, track.Animation)
 			track:Stop()
 		end
 	else
-		for _,anim in ipairs(stoppedTracks) do
+		for _,anim in ipairs(stopped) do
 			pcall(function()
 				hum:LoadAnimation(anim):Play()
 			end)
 		end
-		table.clear(stoppedTracks)
-	end
-end)
-
---================ WALK WATER (SAFE MODE) =================--
-createToggle(Body,"Walk Water",function(state)
-	local char = LocalPlayer.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-
-	hum:SetStateEnabled(Enum.HumanoidStateType.Swimming, not state)
-	if state then
-		hum:ChangeState(Enum.HumanoidStateType.Running)
+		table.clear(stopped)
 	end
 end)
