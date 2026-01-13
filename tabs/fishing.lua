@@ -1,4 +1,4 @@
---// QU33N – FISHING TAB (FULL FINAL FIX)
+--// QU33N – FISHING TAB (FULL FINAL FLOAT FIX)
 
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
@@ -23,34 +23,33 @@ Scroll.ScrollBarThickness = 4
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
 
-local layout = Instance.new("UIListLayout", Scroll)
-layout.Padding = UDim.new(0,14)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local list = Instance.new("UIListLayout", Scroll)
+list.Padding = UDim.new(0,14)
+list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local pad = Instance.new("UIPadding", Scroll)
-pad.PaddingTop = UDim.new(0,10)
-pad.PaddingBottom = UDim.new(0,10)
+pad.PaddingTop = UDim.new(0,12)
+pad.PaddingBottom = UDim.new(0,12)
 
 --================ NOTIFY =================--
-local function notify(feature, state)
+local function notify(name, state)
 	pcall(function()
 		StarterGui:SetCore("SendNotification",{
-			Title = feature,
+			Title = name,
 			Text = state and "Activated" or "Deactivated",
 			Duration = 2
 		})
 	end)
 end
 
---================ TOGGLE ROW =================--
+--================ TOGGLE =================--
 local function createToggleRow(parent, text, callback)
 	local row = Instance.new("Frame", parent)
-	row.Size = UDim2.new(1,-32,0,40)
+	row.Size = UDim2.new(1,-32,0,42)
 	row.BackgroundTransparency = 1
 
 	local label = Instance.new("TextLabel", row)
 	label.Size = UDim2.new(1,-90,1,0)
-	label.Position = UDim2.new(0,0,0,0)
 	label.BackgroundTransparency = 1
 	label.Font = Enum.Font.Gotham
 	label.TextSize = 14
@@ -59,8 +58,8 @@ local function createToggleRow(parent, text, callback)
 	label.Text = text
 
 	local toggle = Instance.new("Frame", row)
-	toggle.Size = UDim2.new(0,44,0,22)
-	toggle.Position = UDim2.new(1,-44,0.5,-11)
+	toggle.Size = UDim2.new(0,46,0,22)
+	toggle.Position = UDim2.new(1,-46,0.5,-11)
 	toggle.BackgroundColor3 = Color3.fromRGB(70,70,70)
 	Instance.new("UICorner",toggle).CornerRadius = UDim.new(1,0)
 
@@ -91,44 +90,42 @@ local function createToggleRow(parent, text, callback)
 			set(not enabled)
 		end
 	end)
-
-	return set
 end
 
 --================ CARD =================--
 local Card = Instance.new("Frame", Scroll)
-Card.Size = UDim2.new(1,-24,0,48)
+Card.Size = UDim2.new(1,-28,0,50)
 Card.BackgroundColor3 = Theme.Panel
 Instance.new("UICorner",Card).CornerRadius = UDim.new(0,16)
 
-local header = Instance.new("TextButton", Card)
-header.Size = UDim2.new(1,-24,0,48)
-header.Position = UDim2.new(0,12,0,0)
-header.BackgroundTransparency = 1
-header.Text = "Fishing Support"
-header.Font = Enum.Font.GothamBold
-header.TextSize = 16
-header.TextXAlignment = Enum.TextXAlignment.Left
-header.TextColor3 = Theme.Accent
+local Header = Instance.new("TextButton", Card)
+Header.Size = UDim2.new(1,-24,0,50)
+Header.Position = UDim2.new(0,12,0,0)
+Header.BackgroundTransparency = 1
+Header.Text = "Fishing Support"
+Header.Font = Enum.Font.GothamBold
+Header.TextSize = 16
+Header.TextXAlignment = Enum.TextXAlignment.Left
+Header.TextColor3 = Theme.Accent
 
-local body = Instance.new("Frame", Card)
-body.Position = UDim2.new(0,12,0,52)
-body.Size = UDim2.new(1,-24,0,0)
-body.BackgroundTransparency = 1
-body.ClipsDescendants = true
+local Body = Instance.new("Frame", Card)
+Body.Position = UDim2.new(0,12,0,56)
+Body.Size = UDim2.new(1,-24,0,0)
+Body.BackgroundTransparency = 1
+Body.ClipsDescendants = true
 
-local bodyLayout = Instance.new("UIListLayout", body)
-bodyLayout.Padding = UDim.new(0,10)
+local bodyList = Instance.new("UIListLayout", Body)
+bodyList.Padding = UDim.new(0,10)
 
-local open = false
-header.MouseButton1Click:Connect(function()
-	open = not open
-	body:TweenSize(
-		open and UDim2.new(1,-24,0,140) or UDim2.new(1,-24,0,0),
+local opened = false
+Header.MouseButton1Click:Connect(function()
+	opened = not opened
+	Body:TweenSize(
+		opened and UDim2.new(1,-24,0,150) or UDim2.new(1,-24,0,0),
 		"Out","Quad",0.25,true
 	)
 	Card:TweenSize(
-		open and UDim2.new(1,-24,0,210) or UDim2.new(1,-24,0,48),
+		opened and UDim2.new(1,-28,0,220) or UDim2.new(1,-28,0,50),
 		"Out","Quad",0.25,true
 	)
 end)
@@ -137,12 +134,12 @@ end)
 local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
 local EquipToolFromHotbar = net:WaitForChild("RE/EquipToolFromHotbar")
 
-local autoEquipConn
-createToggleRow(body,"Auto Equip Rod",function(state)
-	if autoEquipConn then autoEquipConn:Disconnect() autoEquipConn=nil end
+local equipConn
+createToggleRow(Body,"Auto Equip Rod",function(state)
+	if equipConn then equipConn:Disconnect() equipConn=nil end
 	if not state then return end
 
-	autoEquipConn = RunService.Heartbeat:Connect(function()
+	equipConn = RunService.Heartbeat:Connect(function()
 		local char = LocalPlayer.Character
 		if not char then return end
 		if char:FindFirstChildOfClass("Tool") then return end
@@ -153,39 +150,51 @@ createToggleRow(body,"Auto Equip Rod",function(state)
 end)
 
 --================ NO ANIMATION =================--
-createToggleRow(body,"No Animation Fishing",function(state)
+createToggleRow(Body,"No Animation Fishing",function(state)
 	local char = LocalPlayer.Character
 	if not char then return end
 	for _,v in ipairs(char:GetDescendants()) do
 		if v:IsA("Animator") or v:IsA("Animation") then
-			pcall(function()
-				if state then v:Destroy() end
-			end)
+			if state then pcall(function() v:Destroy() end) end
 		end
 	end
 end)
 
---================ WALK WATER (REAL FIX) =================--
+--================ WALK WATER (FLOAT SURFACE) =================--
 local WATER_Y = 0 -- sesuaikan jika map beda
-local walkConn
+local floatConn
+local floatForce
 
-createToggleRow(body,"Walk Water",function(state)
-	if walkConn then walkConn:Disconnect() walkConn=nil end
+createToggleRow(Body,"Walk Water",function(state)
+	if floatConn then floatConn:Disconnect() floatConn=nil end
+	if floatForce then floatForce:Destroy() floatForce=nil end
 	if not state then return end
 
-	walkConn = RunService.Heartbeat:Connect(function()
-		local char = LocalPlayer.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		local hum = char and char:FindFirstChild("Humanoid")
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hrp = char:WaitForChild("HumanoidRootPart")
+	local hum = char:WaitForChild("Humanoid")
+
+	hum:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
+
+	floatForce = Instance.new("BodyVelocity")
+	floatForce.MaxForce = Vector3.new(0,1e5,0)
+	floatForce.Velocity = Vector3.zero
+	floatForce.Parent = hrp
+
+	floatConn = RunService.Heartbeat:Connect(function()
 		if not hrp or not hum then return end
 
-		if hrp.Position.Y < WATER_Y then
-			hrp.Velocity = Vector3.new(hrp.Velocity.X,0,hrp.Velocity.Z)
-			hrp.CFrame = CFrame.new(
-				hrp.Position.X,
-				WATER_Y + 2.8,
-				hrp.Position.Z
+		local targetY = WATER_Y + 2.8
+		local diff = targetY - hrp.Position.Y
+
+		if hrp.Position.Y < WATER_Y + 1 then
+			floatForce.Velocity = Vector3.new(
+				0,
+				math.clamp(diff * 8, -25, 25),
+				0
 			)
+		else
+			floatForce.Velocity = Vector3.zero
 		end
 	end)
 end)
