@@ -1,4 +1,4 @@
---// QU33N – FISHING TAB (FINAL ARROW VERSION)
+--// QU33N – FISHING TAB (NO ANIMATION FIXED)
 
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
@@ -17,8 +17,8 @@ page:ClearAllChildren()
 --================ SCROLL =================--
 local Scroll = Instance.new("ScrollingFrame", page)
 Scroll.Size = UDim2.new(1,0,1,0)
-Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.ScrollBarThickness = 4
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
@@ -26,7 +26,6 @@ Scroll.BorderSizePixel = 0
 local List = Instance.new("UIListLayout", Scroll)
 List.Padding = UDim.new(0,14)
 List.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
 Instance.new("UIPadding", Scroll).PaddingTop = UDim.new(0,12)
 
 --================ NOTIFY =================--
@@ -40,7 +39,7 @@ local function notify(feature, state)
 	end)
 end
 
---================ TOGGLE ROW =================--
+--================ TOGGLE =================--
 local function createToggle(parent, text, callback)
 	local Row = Instance.new("Frame", parent)
 	Row.Size = UDim2.new(1,-20,0,42)
@@ -94,16 +93,13 @@ end
 local Card = Instance.new("Frame", Scroll)
 Card.Size = UDim2.new(1,-20,0,54)
 Card.BackgroundColor3 = Theme.Panel
-Card.BorderSizePixel = 0
 Instance.new("UICorner",Card).CornerRadius = UDim.new(0,16)
 
--- Header
 local Header = Instance.new("TextButton", Card)
 Header.Size = UDim2.new(1,-24,0,54)
 Header.Position = UDim2.new(0,12,0,0)
 Header.BackgroundTransparency = 1
 Header.Text = ""
-Header.AutoButtonColor = false
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1,-30,1,0)
@@ -123,19 +119,15 @@ Arrow.Font = Enum.Font.GothamBold
 Arrow.TextSize = 18
 Arrow.TextColor3 = Theme.SubText
 
--- Body
 local Body = Instance.new("Frame", Card)
 Body.Position = UDim2.new(0,12,0,58)
 Body.Size = UDim2.new(1,-24,0,0)
 Body.AutomaticSize = Enum.AutomaticSize.Y
 Body.BackgroundTransparency = 1
 Body.Visible = false
-Body.ClipsDescendants = true
 
-local BodyList = Instance.new("UIListLayout", Body)
-BodyList.Padding = UDim.new(0,10)
+Instance.new("UIListLayout", Body).Padding = UDim.new(0,10)
 
--- Open / Close
 local Open = false
 Header.MouseButton1Click:Connect(function()
 	Open = not Open
@@ -169,16 +161,32 @@ createToggle(Body,"Auto Equip Rod",function(state)
 	end)
 end)
 
---================ NO ANIMATION =================--
-createToggleRow(body,"No Animation Fishing",function(state)
-	local char = LocalPlayer.Character
-	if not char then return end
+--================ NO ANIMATION (FIXED) =================--
+local noAnim = false
+local animConn
 
-	for _,track in ipairs(char:GetDescendants()) do
-		if track:IsA("AnimationTrack") then
-			pcall(function()
-				if state then track:Stop() end
-			end)
+local function hookHumanoid(hum)
+	if animConn then animConn:Disconnect() end
+	animConn = hum.AnimationPlayed:Connect(function(track)
+		if noAnim then
+			track:AdjustSpeed(0)
 		end
+	end)
+end
+
+createToggle(Body,"No Animation Fishing",function(state)
+	noAnim = state
+
+	local char = LocalPlayer.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hookHumanoid(hum)
+	end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	local hum = char:WaitForChild("Humanoid")
+	if noAnim then
+		hookHumanoid(hum)
 	end
 end)
