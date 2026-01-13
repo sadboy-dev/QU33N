@@ -49,6 +49,7 @@ if MiniEvent then
     MiniEvent.OnClientEvent:Connect(function(param1, param2)
         if param1 and param2 then
             FishMiniData = param2
+            print(FishMiniData)
         end
     end)
 end
