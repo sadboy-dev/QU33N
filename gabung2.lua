@@ -22,10 +22,10 @@ local MiniEvent = NetFolder:WaitForChild("RE/FishingMinigameChanged")
 --// VARIABLES
 _G.Blatant2Fishing = false
 _G.DelayBait = 0.05 -- delay pasang umpan
-_G.DelayCast = 0.05 -- delay lempar lagi
+_G.DelayCast = 0.05 -- delay cast
 local FishMiniData = {}
 
--- Sinkron mini-game
+-- MiniEvent listener → sinkronisasi mini-game
 MiniEvent.OnClientEvent:Connect(function(param1, param2)
     if param1 and param2 then
         FishMiniData = param2
@@ -33,14 +33,24 @@ MiniEvent.OnClientEvent:Connect(function(param1, param2)
 end)
 
 --// FUNCTIONS
+local function getFishCount()
+    local bag = PlayerGui:WaitForChild("Inventory"):WaitForChild("Main")
+        :WaitForChild("Top"):WaitForChild("Options"):WaitForChild("Fish")
+        :WaitForChild("Label"):WaitForChild("BagSize")
+    return tonumber((bag.Text or "0/???"):match("(%d+)/")) or 0
+end
+
 local function Blatant2Loop()
     task.spawn(function()
+        -- Equip rod
         pcall(EquipToolFromHotbar.FireServer, EquipToolFromHotbar, 1)
         task.wait(0.2)
 
         while _G.Blatant2Fishing do
+            -- Pasang bait cepat
             task.wait(_G.DelayBait)
 
+            -- Charge & cast
             local serverTime = Workspace:GetServerTimeNow()
             local success, rodGUID = pcall(function()
                 return ChargeFishingRod:InvokeServer(serverTime)
@@ -49,21 +59,27 @@ local function Blatant2Loop()
             if success and typeof(rodGUID) == "number" then
                 pcall(RequestFishingMinigame.InvokeServer, RequestFishingMinigame, -1, 0.999, rodGUID)
 
-                -- Tunggu mini-game siap → cukup 0.2 detik (lebih cepat)
+                -- Tunggu mini-game siap → aman untuk reel
                 local waitStart = tick()
                 repeat
-                    task.wait(0.02)
-                until (FishMiniData.LastShift or FishMiniData.LastClick) or tick() - waitStart > 0.5
+                    task.wait()
+                until (FishMiniData.LastShift or FishMiniData.LastClick) or tick() - waitStart > 1
 
                 -- Complete fishing
                 pcall(FishingCompleted.FireServer, FishingCompleted)
 
-                -- Reset input
-                pcall(CancelFishingInputs.InvokeServer, CancelFishingInputs)
+                -- Pastikan fish masuk inventory sebelum next loop
+                local currentCount = getFishCount()
+                local countWait = tick()
+                repeat
+                    task.wait()
+                until getFishCount() > currentCount or tick() - countWait > 1
 
-                -- Delay cast minimal sebelum lempar lagi
-                task.wait(_G.DelayCast)
+                -- Cancel input (reset)
+                pcall(CancelFishingInputs.InvokeServer, CancelFishingInputs)
             end
+
+            task.wait(_G.DelayCast)
         end
     end)
 end
@@ -103,7 +119,7 @@ Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1,0,0,28)
 Title.BackgroundTransparency = 1
-Title.Text = "Blatant2 Fastest"
+Title.Text = "Blatant2 Fast"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 Title.TextColor3 = Color3.fromRGB(255,255,255)
@@ -160,4 +176,4 @@ CastInput.TextSize = 14
 Instance.new("UICorner", CastInput).CornerRadius = UDim.new(0,5)
 CastInput.FocusLost:Connect(function(enter) if enter then SetDelayCast(CastInput.Text) end end)
 
-print("=== BLATANT2 FASTEST & STABLE READY ===")
+print("=== BLATANT2 FAST & STABLE READY ===")
