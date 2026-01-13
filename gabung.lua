@@ -1,9 +1,3 @@
---==================================================
--- LEGIT AUTO PERFECT (1 CLICK PRESISI)
---==================================================
-
-print("=== LEGIT AUTO PERFECT START ===")
-
 --// SERVICES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,162 +7,82 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --// NET
-local NetFolder = ReplicatedStorage
-    :WaitForChild("Packages")
+local NetFolder = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
 
-local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
-
---// CONTROLLER
-local FishingController = require(ReplicatedStorage.Controllers.FishingController)
-print("[OK] FishingController loaded")
+local ChargeFishingRod = NetFolder:WaitForChild("RF/ChargeFishingRod")
+local RequestFishingMinigame = NetFolder:WaitForChild("RF/RequestFishingMinigameStarted")
 local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted")
+local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
+local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
 
---// INPUT HOOK (UNTUK RELEASE PERFECT)
-local InputControl = require(ReplicatedStorage.Modules.InputControl)
-local OldRegister = InputControl.RegisterMouseReleased
-local MouseReleaseCallback
+--// VARIABLES
+_G.FishingDelay = 1.1
+_G.ReelDelay = 1.9
+_G.BlatantFishing = false
 
-function InputControl.RegisterMouseReleased(self, param2, callback)
-    MouseReleaseCallback = callback
-    return OldRegister(self, param2, callback)
+--// BLATANT FUNCTIONS
+local function FastestFishing()
+    task.spawn(function()
+        pcall(CancelFishingInputs.InvokeServer, CancelFishingInputs)
+        local serverTime = Workspace:GetServerTimeNow()
+        pcall(ChargeFishingRod.InvokeServer, ChargeFishingRod, serverTime)
+        pcall(RequestFishingMinigame.InvokeServer, RequestFishingMinigame, -1, 0.999)
+        task.wait(_G.FishingDelay)
+        pcall(FishingCompleted.FireServer, FishingCompleted)
+    end)
 end
 
-print("[OK] Input hook installed")
-
---// STATE
-local Enabled = false
-
---==================================================
--- PERFECT CAST (CHARGE + RELEASE)
---==================================================
-local function PerfectCast()
-    local Camera = workspace.CurrentCamera
-    if not Camera then return end
-
-    local Center = Vector2.new(
-        Camera.ViewportSize.X / 2,
-        Camera.ViewportSize.Y / 2
-    )
-
-    FishingController:RequestChargeFishingRod(Center, false)
-
-    local ChargeGui = PlayerGui:WaitForChild("Charge", 3)
-    if not ChargeGui then return end
-
-    local Bar = ChargeGui.Main.CanvasGroup.Bar
-
-    repeat task.wait() until Bar.Size.Y.Scale > 0
-
-    local start = tick()
-    while Bar:IsDescendantOf(PlayerGui) and Bar.Size.Y.Scale < 0.93 do
-        task.wait()
-        if tick() - start > 2 then break end
-    end
-
-    if MouseReleaseCallback then
-        MouseReleaseCallback()
-        print("[AUTO PERFECT] Charge Release")
-    end
-end
-
---==================================================
--- MAIN LOOP (COSMETIC BASED)
---==================================================
-local function StartLegitFishing(state)
-    Enabled = state
-    FishingController._autoLoop = state
-    FishingController._autoShake = state
-
-    if not state then
-        print("[AUTO PERFECT] DISABLED")
-        return
-    end
-
-    print("[AUTO PERFECT] ENABLED")
-
-    -- EQUIP ROD
+local function StartBlatantFishing()
+    _G.BlatantFishing = true
+    pcall(EquipToolFromHotbar.FireServer, EquipToolFromHotbar, 1)
     task.spawn(function()
-        pcall(function()
-            EquipToolFromHotbar:FireServer(1)
-        end)
-    end)
-
-    -- CAST LOOP
-    task.spawn(function()
-        local UserId = tostring(LocalPlayer.UserId)
-        local CosmeticFolder = Workspace:WaitForChild("CosmeticFolder")
-
-        while Enabled do
-            if not CosmeticFolder:FindFirstChild(UserId) then
-                PerfectCast()
-                task.wait(0.25)
-            end
-
-            while CosmeticFolder:FindFirstChild(UserId) and Enabled do
-                task.wait(0.15)
-            end
-
-            task.wait(0.15)
-        end
-    end)
-
-    -- 🔥 1 CLICK PRESISI (MINIGAME)
-    task.spawn(function()
-        local UserId = tostring(LocalPlayer.UserId)
-        local CosmeticFolder = Workspace:WaitForChild("CosmeticFolder")
-
-        while Enabled do
-            if CosmeticFolder:FindFirstChild(UserId) then
-                local fishingGui = PlayerGui:FindFirstChild("Fishing")
-                local mainGui = fishingGui and fishingGui:FindFirstChild("Main")
-                local bar = mainGui
-                    and mainGui:FindFirstChild("CanvasGroup")
-                    and mainGui.CanvasGroup:FindFirstChild("Bar")
-
-                if bar and bar.Size.Y.Scale >= 0.88 then
-                    FishingController:RequestFishingMinigameClick()
-                    print("[AUTO PERFECT] Minigame Click")
-                    task.wait(0.1)
-                    FishingCompleted:FireServer()
-
-                    -- tunggu selesai → cegah spam
-                    repeat
-                        task.wait(0.05)
-                    until not CosmeticFolder:FindFirstChild(UserId)
-                end
-            end
-
-            task.wait(0.03)
+        task.wait(0.5)
+        while _G.BlatantFishing do
+            FastestFishing()
+            task.wait(_G.ReelDelay)
         end
     end)
 end
 
---==================================================
--- GUI KECIL (ON / OFF)
---==================================================
+local function StopBlatantFishing()
+    _G.BlatantFishing = false
+end
+
+local function SetFishingDelay(delay)
+    local num = tonumber(delay)
+    if num and num > 0 then _G.FishingDelay = num end
+end
+
+local function SetReelDelay(delay)
+    local num = tonumber(delay)
+    if num and num > 0 then _G.ReelDelay = num end
+end
+
+--// GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoPerfectGui"
+ScreenGui.Name = "BlatantFishingGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.fromOffset(180, 70)
-Frame.Position = UDim2.fromScale(0.02, 0.45)
-Frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Frame.Size = UDim2.fromOffset(200, 120)
+Frame.Position = UDim2.fromScale(0.02, 0.3)
+Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Frame.BorderSizePixel = 0
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
 
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1,0,0,28)
 Title.BackgroundTransparency = 1
-Title.Text = "Legit Auto Perfect"
+Title.Text = "Blatant Fishing"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 
+-- Toggle Button
 local Toggle = Instance.new("TextButton", Frame)
 Toggle.Size = UDim2.new(1,-20,0,30)
 Toggle.Position = UDim2.new(0,10,0,35)
@@ -181,13 +95,49 @@ Toggle.AutoButtonColor = false
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,8)
 
 Toggle.MouseButton1Click:Connect(function()
-    Enabled = not Enabled
-    Toggle.Text = Enabled and "ON" or "OFF"
-    Toggle.BackgroundColor3 = Enabled
-        and Color3.fromRGB(0,140,0)
-        or Color3.fromRGB(130,0,0)
+    _G.BlatantFishing = not _G.BlatantFishing
+    Toggle.Text = _G.BlatantFishing and "ON" or "OFF"
+    Toggle.BackgroundColor3 = _G.BlatantFishing and Color3.fromRGB(0,140,0) or Color3.fromRGB(130,0,0)
 
-    StartLegitFishing(Enabled)
+    if _G.BlatantFishing then
+        StartBlatantFishing()
+    else
+        StopBlatantFishing()
+    end
 end)
 
-print("=== SCRIPT READY ===")
+-- Fishing Delay Input
+local FishingDelayInput = Instance.new("TextBox", Frame)
+FishingDelayInput.Size = UDim2.new(1,-20,0,20)
+FishingDelayInput.Position = UDim2.new(0,10,0,70)
+FishingDelayInput.PlaceholderText = "Fishing Delay (s)"
+FishingDelayInput.Text = tostring(_G.FishingDelay)
+FishingDelayInput.ClearTextOnFocus = false
+FishingDelayInput.TextColor3 = Color3.fromRGB(255,255,255)
+FishingDelayInput.BackgroundColor3 = Color3.fromRGB(40,40,40)
+FishingDelayInput.Font = Enum.Font.Gotham
+FishingDelayInput.TextSize = 14
+Instance.new("UICorner", FishingDelayInput).CornerRadius = UDim.new(0,5)
+
+FishingDelayInput.FocusLost:Connect(function(enter)
+    if enter then SetFishingDelay(FishingDelayInput.Text) end
+end)
+
+-- Reel Delay Input
+local ReelDelayInput = Instance.new("TextBox", Frame)
+ReelDelayInput.Size = UDim2.new(1,-20,0,20)
+ReelDelayInput.Position = UDim2.new(0,10,0,95)
+ReelDelayInput.PlaceholderText = "Reel Delay (s)"
+ReelDelayInput.Text = tostring(_G.ReelDelay)
+ReelDelayInput.ClearTextOnFocus = false
+ReelDelayInput.TextColor3 = Color3.fromRGB(255,255,255)
+ReelDelayInput.BackgroundColor3 = Color3.fromRGB(40,40,40)
+ReelDelayInput.Font = Enum.Font.Gotham
+ReelDelayInput.TextSize = 14
+Instance.new("UICorner", ReelDelayInput).CornerRadius = UDim.new(0,5)
+
+ReelDelayInput.FocusLost:Connect(function(enter)
+    if enter then SetReelDelay(ReelDelayInput.Text) end
+end)
+
+print("=== BLATANT FISHING READY ===")
