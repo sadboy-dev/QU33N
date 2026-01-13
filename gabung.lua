@@ -29,21 +29,22 @@ end
 
 -- VARIABLES
 local Enabled = false
+local InstantDelay = 0.1
+local FishMiniData = {}
 
 -- MINI EVENT
-local FishMiniData = {}
 local MiniEvent = NetFolder:WaitForChild("RE/FishingMinigameChanged")
 MiniEvent.OnClientEvent:Connect(function(p1,p2)
     if p1 and p2 then FishMiniData = p2 end
 end)
 
--- PERFECT + INSTANT FISH ONCE
-local function AutoFishOnce()
+-- AUTO PERFECT CAST + INSTANT FISH
+local function AutoCastAndFish()
     -- 1️⃣ Equip rod
     pcall(function() EquipToolFromHotbar:FireServer(1) end)
     task.wait(0.3)
 
-    -- 2️⃣ Charge rod & release
+    -- 2️⃣ Charge rod (muncul bar)
     local Camera = workspace.CurrentCamera
     if not Camera then return end
     local Center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
@@ -58,37 +59,39 @@ local function AutoFishOnce()
             task.wait()
             if tick()-start>2 then break end
         end
+        -- Release charge
         if MouseReleaseCallback then MouseReleaseCallback() end
     end
 
-    task.wait(0.1)
+    task.wait(0.05)
 
-    -- 3️⃣ Server invoke
+    -- 3️⃣ Ambil rodGUID dari server
     local success, _, rodGUID = pcall(function()
         return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
     end)
     if success and typeof(rodGUID) == "number" then
+        -- 4️⃣ Invoke mini-game server → auto perfect
         pcall(function()
             RequestFishingMinigame:InvokeServer(-1, 0.999, rodGUID)
         end)
     end
 
-    -- 4️⃣ Mini-game click (client)
+    -- 5️⃣ Klik mini-game client (safety)
     pcall(function()
         FishingController:RequestFishingMinigameClick()
     end)
 
     task.wait(0.05)
 
-    -- 5️⃣ Complete
+    -- 6️⃣ Complete fishing
     pcall(function()
         FishingCompleted:FireServer()
         CancelFishingInputs:InvokeServer()
     end)
 end
 
--- LOOP AUTO FISH
-local function StartAutoFishing(state)
+-- LOOP AUTO INSTANT FISH
+local function StartInstantFishingLoop(state)
     Enabled = state
     FishingController._autoLoop = state
     FishingController._autoShake = state
@@ -96,15 +99,15 @@ local function StartAutoFishing(state)
 
     task.spawn(function()
         while Enabled do
-            AutoFishOnce()
+            AutoCastAndFish()
             task.wait(0.15) -- delay antar cast
         end
     end)
 end
 
--- GUI kecil
+-- GUI KECIL
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoPerfectGui"
+ScreenGui.Name = "InstantFishingGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
@@ -118,7 +121,7 @@ Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1,0,0,28)
 Title.BackgroundTransparency = 1
-Title.Text = "Auto Perfect Fishing"
+Title.Text = "Instant Fishing"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 Title.TextColor3 = Color3.fromRGB(255,255,255)
@@ -138,7 +141,7 @@ Toggle.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     Toggle.Text = Enabled and "ON" or "OFF"
     Toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,140,0) or Color3.fromRGB(130,0,0)
-    StartAutoFishing(Enabled)
+    StartInstantFishingLoop(Enabled)
 end)
 
-print("=== AUTO PERFECT + INSTANT FISHING READY ===")
+print("=== INSTANT FISHING READY WITH BAR ===")
