@@ -170,24 +170,15 @@ createToggle(Body,"Auto Equip Rod",function(state)
 end)
 
 --================ NO ANIMATION =================--
-local stopped = {}
-
-createToggle(Body,"No Animation Fishing",function(state)
+createToggleRow(body,"No Animation Fishing",function(state)
 	local char = LocalPlayer.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
+	if not char then return end
 
-	if state then
-		for _,track in ipairs(hum:GetPlayingAnimationTracks()) do
-			table.insert(stopped, track.Animation)
-			track:Stop()
-		end
-	else
-		for _,anim in ipairs(stopped) do
+	for _,track in ipairs(char:GetDescendants()) do
+		if track:IsA("AnimationTrack") then
 			pcall(function()
-				hum:LoadAnimation(anim):Play()
+				if state then track:Stop() end
 			end)
 		end
-		table.clear(stopped)
 	end
 end)
