@@ -17,95 +17,53 @@ local RequestFishingMinigame = NetFolder:WaitForChild("RF/RequestFishingMinigame
 local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted")
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
 local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
-local MiniEvent = NetFolder:WaitForChild("RE/FishingMinigameChanged")
 
 --// VARIABLES
-_G.Blatant2Fishing = false
-_G.DelayBait = 0.05 -- delay pasang umpan
-_G.DelayCast = 0.05 -- delay cast
-local FishMiniData = {}
+_G.FishingDelay = 1.1
+_G.ReelDelay = 1.9
+_G.BlatantFishing = false
 
--- MiniEvent listener → sinkronisasi mini-game
-MiniEvent.OnClientEvent:Connect(function(param1, param2)
-    if param1 and param2 then
-        FishMiniData = param2
-    end
-end)
-
---// FUNCTIONS
-local function getFishCount()
-    local bag = PlayerGui:WaitForChild("Inventory"):WaitForChild("Main")
-        :WaitForChild("Top"):WaitForChild("Options"):WaitForChild("Fish")
-        :WaitForChild("Label"):WaitForChild("BagSize")
-    return tonumber((bag.Text or "0/???"):match("(%d+)/")) or 0
+--// BLATANT FUNCTIONS
+local function FastestFishing()
+    task.spawn(function()
+        pcall(CancelFishingInputs.InvokeServer, CancelFishingInputs)
+        local serverTime = Workspace:GetServerTimeNow()
+        pcall(ChargeFishingRod.InvokeServer, ChargeFishingRod, serverTime)
+        pcall(RequestFishingMinigame.InvokeServer, RequestFishingMinigame, -1, 0.999)
+        task.wait(_G.FishingDelay)
+        pcall(FishingCompleted.FireServer, FishingCompleted)
+    end)
 end
 
-local function Blatant2Loop()
+local function StartBlatantFishing()
+    _G.BlatantFishing = true
+    pcall(EquipToolFromHotbar.FireServer, EquipToolFromHotbar, 1)
     task.spawn(function()
-        -- Equip rod
-        pcall(EquipToolFromHotbar.FireServer, EquipToolFromHotbar, 1)
-        task.wait(0.2)
-
-        while _G.Blatant2Fishing do
-            -- Pasang bait cepat
-            task.wait(_G.DelayBait)
-
-            -- Charge & cast
-            local serverTime = Workspace:GetServerTimeNow()
-            local success, rodGUID = pcall(function()
-                return ChargeFishingRod:InvokeServer(serverTime)
-            end)
-
-            if success and typeof(rodGUID) == "number" then
-                pcall(RequestFishingMinigame.InvokeServer, RequestFishingMinigame, -1, 0.999, rodGUID)
-
-                -- Tunggu mini-game siap → aman untuk reel
-                local waitStart = tick()
-                repeat
-                    task.wait()
-                until (FishMiniData.LastShift or FishMiniData.LastClick) or tick() - waitStart > 1
-
-                -- Complete fishing
-                pcall(FishingCompleted.FireServer, FishingCompleted)
-
-                -- Pastikan fish masuk inventory sebelum next loop
-                local currentCount = getFishCount()
-                local countWait = tick()
-                repeat
-                    task.wait()
-                until getFishCount() > currentCount or tick() - countWait > 1
-
-                -- Cancel input (reset)
-                pcall(CancelFishingInputs.InvokeServer, CancelFishingInputs)
-            end
-
-            task.wait(_G.DelayCast)
+        task.wait(0.5)
+        while _G.BlatantFishing do
+            FastestFishing()
+            task.wait(_G.ReelDelay)
         end
     end)
 end
 
-local function StartBlatant2()
-    _G.Blatant2Fishing = true
-    Blatant2Loop()
+local function StopBlatantFishing()
+    _G.BlatantFishing = false
 end
 
-local function StopBlatant2()
-    _G.Blatant2Fishing = false
+local function SetFishingDelay(delay)
+    local num = tonumber(delay)
+    if num and num > 0 then _G.FishingDelay = num end
 end
 
-local function SetDelayBait(val)
-    local n = tonumber(val)
-    if n and n >= 0 then _G.DelayBait = n end
-end
-
-local function SetDelayCast(val)
-    local n = tonumber(val)
-    if n and n >= 0 then _G.DelayCast = n end
+local function SetReelDelay(delay)
+    local num = tonumber(delay)
+    if num and num > 0 then _G.ReelDelay = num end
 end
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Blatant2GUI"
+ScreenGui.Name = "BlatantFishingGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
@@ -119,7 +77,7 @@ Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1,0,0,28)
 Title.BackgroundTransparency = 1
-Title.Text = "Blatant2 Fast"
+Title.Text = "Blatant Fishing"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 Title.TextColor3 = Color3.fromRGB(255,255,255)
@@ -137,43 +95,49 @@ Toggle.AutoButtonColor = false
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,8)
 
 Toggle.MouseButton1Click:Connect(function()
-    _G.Blatant2Fishing = not _G.Blatant2Fishing
-    Toggle.Text = _G.Blatant2Fishing and "ON" or "OFF"
-    Toggle.BackgroundColor3 = _G.Blatant2Fishing and Color3.fromRGB(0,140,0) or Color3.fromRGB(130,0,0)
+    _G.BlatantFishing = not _G.BlatantFishing
+    Toggle.Text = _G.BlatantFishing and "ON" or "OFF"
+    Toggle.BackgroundColor3 = _G.BlatantFishing and Color3.fromRGB(0,140,0) or Color3.fromRGB(130,0,0)
 
-    if _G.Blatant2Fishing then
-        StartBlatant2()
+    if _G.BlatantFishing then
+        StartBlatantFishing()
     else
-        StopBlatant2()
+        StopBlatantFishing()
     end
 end)
 
--- Delay Bait Input
-local BaitInput = Instance.new("TextBox", Frame)
-BaitInput.Size = UDim2.new(1,-20,0,20)
-BaitInput.Position = UDim2.new(0,10,0,70)
-BaitInput.PlaceholderText = "Delay Bait (s)"
-BaitInput.Text = tostring(_G.DelayBait)
-BaitInput.ClearTextOnFocus = false
-BaitInput.TextColor3 = Color3.fromRGB(255,255,255)
-BaitInput.BackgroundColor3 = Color3.fromRGB(40,40,40)
-BaitInput.Font = Enum.Font.Gotham
-BaitInput.TextSize = 14
-Instance.new("UICorner", BaitInput).CornerRadius = UDim.new(0,5)
-BaitInput.FocusLost:Connect(function(enter) if enter then SetDelayBait(BaitInput.Text) end end)
+-- Fishing Delay Input
+local FishingDelayInput = Instance.new("TextBox", Frame)
+FishingDelayInput.Size = UDim2.new(1,-20,0,20)
+FishingDelayInput.Position = UDim2.new(0,10,0,70)
+FishingDelayInput.PlaceholderText = "Fishing Delay (s)"
+FishingDelayInput.Text = tostring(_G.FishingDelay)
+FishingDelayInput.ClearTextOnFocus = false
+FishingDelayInput.TextColor3 = Color3.fromRGB(255,255,255)
+FishingDelayInput.BackgroundColor3 = Color3.fromRGB(40,40,40)
+FishingDelayInput.Font = Enum.Font.Gotham
+FishingDelayInput.TextSize = 14
+Instance.new("UICorner", FishingDelayInput).CornerRadius = UDim.new(0,5)
 
--- Delay Cast Input
-local CastInput = Instance.new("TextBox", Frame)
-CastInput.Size = UDim2.new(1,-20,0,20)
-CastInput.Position = UDim2.new(0,10,0,95)
-CastInput.PlaceholderText = "Delay Cast (s)"
-CastInput.Text = tostring(_G.DelayCast)
-CastInput.ClearTextOnFocus = false
-CastInput.TextColor3 = Color3.fromRGB(255,255,255)
-CastInput.BackgroundColor3 = Color3.fromRGB(40,40,40)
-CastInput.Font = Enum.Font.Gotham
-CastInput.TextSize = 14
-Instance.new("UICorner", CastInput).CornerRadius = UDim.new(0,5)
-CastInput.FocusLost:Connect(function(enter) if enter then SetDelayCast(CastInput.Text) end end)
+FishingDelayInput.FocusLost:Connect(function(enter)
+    if enter then SetFishingDelay(FishingDelayInput.Text) end
+end)
 
-print("=== BLATANT2 FAST & STABLE READY ===")
+-- Reel Delay Input
+local ReelDelayInput = Instance.new("TextBox", Frame)
+ReelDelayInput.Size = UDim2.new(1,-20,0,20)
+ReelDelayInput.Position = UDim2.new(0,10,0,95)
+ReelDelayInput.PlaceholderText = "Reel Delay (s)"
+ReelDelayInput.Text = tostring(_G.ReelDelay)
+ReelDelayInput.ClearTextOnFocus = false
+ReelDelayInput.TextColor3 = Color3.fromRGB(255,255,255)
+ReelDelayInput.BackgroundColor3 = Color3.fromRGB(40,40,40)
+ReelDelayInput.Font = Enum.Font.Gotham
+ReelDelayInput.TextSize = 14
+Instance.new("UICorner", ReelDelayInput).CornerRadius = UDim.new(0,5)
+
+ReelDelayInput.FocusLost:Connect(function(enter)
+    if enter then SetReelDelay(ReelDelayInput.Text) end
+end)
+
+print("=== BLATANT FISHING READY ===")
