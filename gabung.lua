@@ -131,6 +131,7 @@ local function StartLegitFishing(state)
                 if bar and bar.Size.Y.Scale >= 0.88 then
                     FishingController:RequestFishingMinigameClick()
                     print("[AUTO PERFECT] Minigame Click")
+                    task.wait(0.1)
                     FishingCompleted:FireServer()
 
                     -- tunggu selesai → cegah spam
