@@ -1,4 +1,4 @@
---// QU33N – FISHING TAB (STABLE FINAL)
+--// QU33N – FISHING TAB (FULL FINAL CLEAN)
 
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
@@ -18,17 +18,18 @@ page:ClearAllChildren()
 local Scroll = Instance.new("ScrollingFrame", page)
 Scroll.Size = UDim2.new(1,0,1,0)
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.ScrollBarThickness = 4
 Scroll.BackgroundTransparency = 1
 
-local list = Instance.new("UIListLayout", Scroll)
-list.Padding = UDim.new(0,14)
-list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Instance.new("UIPadding",Scroll).PaddingTop = UDim.new(0,8)
 
-Instance.new("UIPadding", Scroll).PaddingTop = UDim.new(0,12)
+local layout = Instance.new("UIListLayout",Scroll)
+layout.Padding = UDim.new(0,12)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 --================ NOTIFY =================--
-local function notify(name, state)
+local function notify(name,state)
 	pcall(function()
 		StarterGui:SetCore("SendNotification",{
 			Title = name,
@@ -38,138 +39,138 @@ local function notify(name, state)
 	end)
 end
 
---================ TOGGLE =================--
-local function toggleRow(parent, text, callback)
-	local row = Instance.new("Frame", parent)
-	row.Size = UDim2.new(1,-28,0,42)
+--================ TOGGLE ROW =================--
+local function createToggleRow(parent,text,callback)
+	local row = Instance.new("Frame",parent)
+	row.Size = UDim2.new(1,-24,0,34)
 	row.BackgroundTransparency = 1
 
-	local label = Instance.new("TextLabel", row)
-	label.Size = UDim2.new(1,-90,1,0)
+	local label = Instance.new("TextLabel",row)
+	label.Size = UDim2.new(1,-80,1,0)
+	label.Position = UDim2.new(0,12,0,0)
 	label.BackgroundTransparency = 1
+	label.TextXAlignment = Left
 	label.Font = Enum.Font.Gotham
 	label.TextSize = 14
-	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.TextColor3 = Theme.Text
 	label.Text = text
 
-	local toggle = Instance.new("Frame", row)
-	toggle.Size = UDim2.new(0,46,0,22)
-	toggle.Position = UDim2.new(1,-46,0.5,-11)
-	toggle.BackgroundColor3 = Color3.fromRGB(70,70,70)
+	local toggle = Instance.new("Frame",row)
+	toggle.Size = UDim2.new(0,40,0,20)
+	toggle.Position = UDim2.new(1,-52,0.5,-10)
+	toggle.BackgroundColor3 = Color3.fromRGB(90,90,90)
 	Instance.new("UICorner",toggle).CornerRadius = UDim.new(1,0)
 
-	local knob = Instance.new("Frame", toggle)
-	knob.Size = UDim2.new(0,18,0,18)
-	knob.Position = UDim2.new(0,2,0.5,-9)
+	local knob = Instance.new("Frame",toggle)
+	knob.Size = UDim2.new(0.5,0,1,0)
 	knob.BackgroundColor3 = Theme.BG
 	Instance.new("UICorner",knob).CornerRadius = UDim.new(1,0)
 
 	local enabled = false
-	local function set(v)
-		enabled = v
-		if v then
-			knob:TweenPosition(UDim2.new(1,-20,0.5,-9),"Out","Quad",0.2,true)
-			toggle.BackgroundColor3 = Theme.Accent
-		else
-			knob:TweenPosition(UDim2.new(0,2,0.5,-9),"Out","Quad",0.2,true)
-			toggle.BackgroundColor3 = Color3.fromRGB(70,70,70)
-		end
-		callback(v)
-		notify(text, v)
-	end
-
 	toggle.InputBegan:Connect(function(i)
 		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			set(not enabled)
+			enabled = not enabled
+			if enabled then
+				knob:TweenPosition(UDim2.new(0.5,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.15,true)
+				toggle.BackgroundColor3 = Theme.Accent
+			else
+				knob:TweenPosition(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.15,true)
+				toggle.BackgroundColor3 = Color3.fromRGB(90,90,90)
+			end
+			callback(enabled)
+			notify(text,enabled)
 		end
 	end)
 end
 
 --================ CARD =================--
-local Card = Instance.new("Frame", Scroll)
-Card.Size = UDim2.new(1,-28,0,50)
+local Card = Instance.new("Frame",Scroll)
+Card.Size = UDim2.new(1,-16,0,44)
 Card.BackgroundColor3 = Theme.Panel
 Instance.new("UICorner",Card).CornerRadius = UDim.new(0,16)
 
-local Header = Instance.new("TextButton", Card)
-Header.Size = UDim2.new(1,-24,0,50)
-Header.Position = UDim2.new(0,12,0,0)
+local Header = Instance.new("TextButton",Card)
+Header.Size = UDim2.new(1,0,0,44)
 Header.BackgroundTransparency = 1
 Header.Text = "Fishing Support"
 Header.Font = Enum.Font.GothamBold
 Header.TextSize = 16
-Header.TextXAlignment = Enum.TextXAlignment.Left
 Header.TextColor3 = Theme.Accent
 
-local Body = Instance.new("Frame", Card)
-Body.Position = UDim2.new(0,12,0,56)
-Body.Size = UDim2.new(1,-24,0,0)
+local Body = Instance.new("Frame",Card)
+Body.Position = UDim2.new(0,0,0,44)
+Body.Size = UDim2.new(1,0,0,0)
 Body.BackgroundTransparency = 1
 Body.ClipsDescendants = true
 
-local bodyList = Instance.new("UIListLayout", Body)
-bodyList.Padding = UDim.new(0,10)
+local BodyLayout = Instance.new("UIListLayout",Body)
+BodyLayout.Padding = UDim.new(0,8)
 
 local open = false
 Header.MouseButton1Click:Connect(function()
 	open = not open
-	Body:TweenSize(open and UDim2.new(1,-24,0,140) or UDim2.new(1,-24,0,0),"Out","Quad",0.25,true)
-	Card:TweenSize(open and UDim2.new(1,-28,0,200) or UDim2.new(1,-28,0,50),"Out","Quad",0.25,true)
+	Body:TweenSize(open and UDim2.new(1,0,0,120) or UDim2.new(1,0,0,0),
+		Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.25,true)
+	Card:TweenSize(open and UDim2.new(1,-16,0,168) or UDim2.new(1,-16,0,44),
+		Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.25,true)
 end)
 
 --================ AUTO EQUIP ROD =================--
 local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
-local EquipToolFromHotbar = net:WaitForChild("RE/EquipToolFromHotbar")
+local EquipTool = net:WaitForChild("RE/EquipToolFromHotbar")
 
 local equipConn
-toggleRow(Body,"Auto Equip Rod",function(state)
+createToggleRow(Body,"Auto Equip Rod",function(state)
 	if equipConn then equipConn:Disconnect() equipConn=nil end
 	if not state then return end
+
 	equipConn = RunService.Heartbeat:Connect(function()
 		local char = LocalPlayer.Character
-		if char and not char:FindFirstChildOfClass("Tool") then
-			pcall(function()
-				EquipToolFromHotbar:FireServer(1)
-			end)
-		end
+		if not char then return end
+		if char:FindFirstChildOfClass("Tool") then return end
+		pcall(function()
+			EquipTool:FireServer(1)
+		end)
 	end)
 end)
 
---================ NO ANIMATION FISHING =================--
-local savedTracks = {}
-
-toggleRow(Body,"No Animation Fishing",function(state)
+--================ NO ANIMATION =================--
+createToggleRow(Body,"No Animation Fishing",function(state)
 	local char = LocalPlayer.Character
-	if not char then return end
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-
-	if state then
-		for _,track in ipairs(hum:GetPlayingAnimationTracks()) do
-			savedTracks[#savedTracks+1] = track.Animation
-			track:Stop()
+	if not char or not state then return end
+	for _,v in pairs(char:GetDescendants()) do
+		if v:IsA("Animator") or v:IsA("Animation") then
+			pcall(function() v:Destroy() end)
 		end
-	else
-		for _,anim in ipairs(savedTracks) do
-			pcall(function()
-				hum:LoadAnimation(anim):Play()
-			end)
-		end
-		table.clear(savedTracks)
 	end
 end)
 
---================ WALK WATER (NO SWIM) =================--
-toggleRow(Body,"Walk Water",function(state)
-	local char = LocalPlayer.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
+--================ WALK WATER (RAYCAST) =================--
+local walkConn
+local RayParams = RaycastParams.new()
+RayParams.FilterType = Enum.RaycastFilterType.Blacklist
 
-	-- 🔥 INI KUNCINYA
-	hum:SetStateEnabled(Enum.HumanoidStateType.Swimming, not state)
+createToggleRow(Body,"Walk Water",function(state)
+	if walkConn then walkConn:Disconnect() walkConn=nil end
+	if not state then return end
 
-	if state then
-		hum:ChangeState(Enum.HumanoidStateType.Running)
-	end
+	walkConn = RunService.Heartbeat:Connect(function()
+		local char = LocalPlayer.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if not hrp or not hum then return end
+
+		RayParams.FilterDescendantsInstances = {char}
+		local result = workspace:Raycast(hrp.Position,Vector3.new(0,-15,0),RayParams)
+		if result and result.Instance then
+			if result.Instance.Name:lower():find("water")
+			or result.Instance.Material == Enum.Material.Water then
+				local y = result.Position.Y + 2.9
+				if hrp.Position.Y < y then
+					hrp.Velocity = Vector3.new(hrp.Velocity.X,0,hrp.Velocity.Z)
+					hrp.CFrame = CFrame.new(hrp.Position.X,y,hrp.Position.Z)
+				end
+			end
+		end
+	end)
 end)
