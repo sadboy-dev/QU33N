@@ -1,4 +1,4 @@
---// QU33N – FISHING TAB (FULL FINAL FLOAT FIX)
+--// QU33N – FISHING TAB (FINAL RAYCAST WALK WATER)
 
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 page:ClearAllChildren()
@@ -21,15 +22,12 @@ Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.ScrollBarThickness = 4
 Scroll.BackgroundTransparency = 1
-Scroll.BorderSizePixel = 0
 
-local list = Instance.new("UIListLayout", Scroll)
-list.Padding = UDim.new(0,14)
-list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local layout = Instance.new("UIListLayout", Scroll)
+layout.Padding = UDim.new(0,14)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local pad = Instance.new("UIPadding", Scroll)
-pad.PaddingTop = UDim.new(0,12)
-pad.PaddingBottom = UDim.new(0,12)
+Instance.new("UIPadding", Scroll).PaddingTop = UDim.new(0,12)
 
 --================ NOTIFY =================--
 local function notify(name, state)
@@ -70,7 +68,6 @@ local function createToggleRow(parent, text, callback)
 	Instance.new("UICorner",knob).CornerRadius = UDim.new(1,0)
 
 	local enabled = false
-
 	local function set(state)
 		enabled = state
 		if enabled then
@@ -120,14 +117,8 @@ bodyList.Padding = UDim.new(0,10)
 local opened = false
 Header.MouseButton1Click:Connect(function()
 	opened = not opened
-	Body:TweenSize(
-		opened and UDim2.new(1,-24,0,150) or UDim2.new(1,-24,0,0),
-		"Out","Quad",0.25,true
-	)
-	Card:TweenSize(
-		opened and UDim2.new(1,-28,0,220) or UDim2.new(1,-28,0,50),
-		"Out","Quad",0.25,true
-	)
+	Body:TweenSize(opened and UDim2.new(1,-24,0,150) or UDim2.new(1,-24,0,0),"Out","Quad",0.25,true)
+	Card:TweenSize(opened and UDim2.new(1,-28,0,220) or UDim2.new(1,-28,0,50),"Out","Quad",0.25,true)
 end)
 
 --================ AUTO EQUIP ROD =================--
@@ -138,63 +129,43 @@ local equipConn
 createToggleRow(Body,"Auto Equip Rod",function(state)
 	if equipConn then equipConn:Disconnect() equipConn=nil end
 	if not state then return end
-
 	equipConn = RunService.Heartbeat:Connect(function()
 		local char = LocalPlayer.Character
-		if not char then return end
-		if char:FindFirstChildOfClass("Tool") then return end
-		pcall(function()
-			EquipToolFromHotbar:FireServer(1)
-		end)
+		if char and not char:FindFirstChildOfClass("Tool") then
+			pcall(function()
+				EquipToolFromHotbar:FireServer(1)
+			end)
+		end
 	end)
 end)
 
---================ NO ANIMATION =================--
-createToggleRow(Body,"No Animation Fishing",function(state)
-	local char = LocalPlayer.Character
-	if not char then return end
-	for _,v in ipairs(char:GetDescendants()) do
-		if v:IsA("Animator") or v:IsA("Animation") then
-			if state then pcall(function() v:Destroy() end) end
-		end
-	end
-end)
-
---================ WALK WATER (FLOAT SURFACE) =================--
-local WATER_Y = 0 -- sesuaikan jika map beda
-local floatConn
-local floatForce
+--================ WALK WATER (RAYCAST) =================--
+local walkConn
 
 createToggleRow(Body,"Walk Water",function(state)
-	if floatConn then floatConn:Disconnect() floatConn=nil end
-	if floatForce then floatForce:Destroy() floatForce=nil end
+	if walkConn then walkConn:Disconnect() walkConn=nil end
 	if not state then return end
 
-	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-	local hrp = char:WaitForChild("HumanoidRootPart")
-	local hum = char:WaitForChild("Humanoid")
-
-	hum:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
-
-	floatForce = Instance.new("BodyVelocity")
-	floatForce.MaxForce = Vector3.new(0,1e5,0)
-	floatForce.Velocity = Vector3.zero
-	floatForce.Parent = hrp
-
-	floatConn = RunService.Heartbeat:Connect(function()
+	walkConn = RunService.Heartbeat:Connect(function()
+		local char = LocalPlayer.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		local hum = char and char:FindFirstChild("Humanoid")
 		if not hrp or not hum then return end
+		if hum:GetState() == Enum.HumanoidStateType.Jumping then return end
 
-		local targetY = WATER_Y + 2.8
-		local diff = targetY - hrp.Position.Y
+		local rayParams = RaycastParams.new()
+		rayParams.FilterDescendantsInstances = {char}
+		rayParams.FilterType = Enum.RaycastFilterType.Blacklist
 
-		if hrp.Position.Y < WATER_Y + 1 then
-			floatForce.Velocity = Vector3.new(
-				0,
-				math.clamp(diff * 8, -25, 25),
-				0
+		local origin = hrp.Position + Vector3.new(0,5,0)
+		local result = Workspace:Raycast(origin, Vector3.new(0,-20,0), rayParams)
+
+		if result and result.Instance and result.Instance.Name:lower():find("water") then
+			hrp.CFrame = CFrame.new(
+				hrp.Position.X,
+				result.Position.Y + 2.9,
+				hrp.Position.Z
 			)
-		else
-			floatForce.Velocity = Vector3.zero
 		end
 	end)
 end)
