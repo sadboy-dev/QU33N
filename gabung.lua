@@ -29,113 +29,88 @@ end
 
 -- VARIABLES
 local Enabled = false
-local FishMiniData = {}
 
 -- MINI EVENT
+local FishMiniData = {}
 local MiniEvent = NetFolder:WaitForChild("RE/FishingMinigameChanged")
-MiniEvent.OnClientEvent:Connect(function(p1, p2)
+MiniEvent.OnClientEvent:Connect(function(p1,p2)
     if p1 and p2 then FishMiniData = p2 end
 end)
 
--- GET FISH COUNT
-local function getFishCount()
-    local inv = PlayerGui:FindFirstChild("Inventory")
-    if not inv then return 0 end
-    local main = inv:FindFirstChild("Main")
-    if not main then return 0 end
-    local top = main:FindFirstChild("Top")
-    if not top then return 0 end
-    local options = top:FindFirstChild("Options")
-    if not options then return 0 end
-    local fish = options:FindFirstChild("Fish")
-    if not fish then return 0 end
-    local label = fish:FindFirstChild("Label")
-    if not label then return 0 end
-    local bag = label:FindFirstChild("BagSize")
-    if not bag then return 0 end
-    return tonumber((bag.Text or "0/???"):match("(%d+)/")) or 0
-end
+-- PERFECT + INSTANT FISH ONCE
+local function AutoFishOnce()
+    -- 1️⃣ Equip rod
+    pcall(function() EquipToolFromHotbar:FireServer(1) end)
+    task.wait(0.3)
 
--- PERFECT CAST
-local function PerfectCast()
+    -- 2️⃣ Charge rod & release
     local Camera = workspace.CurrentCamera
     if not Camera then return end
     local Center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    FishingController:RequestChargeFishingRod(Center, false)
+    FishingController:RequestChargeFishingRod(Center,false)
 
     local ChargeGui = PlayerGui:FindFirstChild("Charge")
-    if not ChargeGui then return end
-    local Bar = ChargeGui.Main.CanvasGroup.Bar
-    repeat task.wait() until Bar.Size.Y.Scale > 0
-    local start = tick()
-    while Bar:IsDescendantOf(PlayerGui) and Bar.Size.Y.Scale < 0.93 do
-        task.wait()
-        if tick()-start>2 then break end
+    if ChargeGui then
+        local Bar = ChargeGui.Main.CanvasGroup.Bar
+        repeat task.wait() until Bar.Size.Y.Scale>0
+        local start = tick()
+        while Bar:IsDescendantOf(PlayerGui) and Bar.Size.Y.Scale < 0.93 do
+            task.wait()
+            if tick()-start>2 then break end
+        end
+        if MouseReleaseCallback then MouseReleaseCallback() end
     end
-    if MouseReleaseCallback then
-        MouseReleaseCallback()
-    end
-end
 
--- INSTANT FISH ONCE
-local function InstantFishOnce()
+    task.wait(0.1)
+
+    -- 3️⃣ Server invoke
     local success, _, rodGUID = pcall(function()
         return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
     end)
     if success and typeof(rodGUID) == "number" then
-        -- klik mini-game
-        pcall(function()
-            FishingController:RequestFishingMinigameClick()
-        end)
-        -- invoke server auto perfect
         pcall(function()
             RequestFishingMinigame:InvokeServer(-1, 0.999, rodGUID)
         end)
-        task.wait(0.05)
-        -- selesai
-        pcall(function()
-            FishingCompleted:FireServer()
-            CancelFishingInputs:InvokeServer()
-        end)
     end
+
+    -- 4️⃣ Mini-game click (client)
+    pcall(function()
+        FishingController:RequestFishingMinigameClick()
+    end)
+
+    task.wait(0.05)
+
+    -- 5️⃣ Complete
+    pcall(function()
+        FishingCompleted:FireServer()
+        CancelFishingInputs:InvokeServer()
+    end)
 end
 
--- MAIN LOOP
-local function StartFishingLoop(state)
+-- LOOP AUTO FISH
+local function StartAutoFishing(state)
     Enabled = state
     FishingController._autoLoop = state
     FishingController._autoShake = state
     if not state then return end
 
-    -- equip rod
-    pcall(function() EquipToolFromHotbar:FireServer(1) end)
-
     task.spawn(function()
-        local UserId = tostring(LocalPlayer.UserId)
-        local CosmeticFolder = Workspace:WaitForChild("CosmeticFolder")
         while Enabled do
-            if not CosmeticFolder:FindFirstChild(UserId) then
-                PerfectCast()
-                task.wait(0.2)
-            end
-            while CosmeticFolder:FindFirstChild(UserId) and Enabled do
-                InstantFishOnce()
-                task.wait(0.05)
-            end
-            task.wait(0.1)
+            AutoFishOnce()
+            task.wait(0.15) -- delay antar cast
         end
     end)
 end
 
--- GUI KECIL
+-- GUI kecil
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AutoPerfectGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.fromOffset(180, 70)
-Frame.Position = UDim2.fromScale(0.02, 0.45)
+Frame.Size = UDim2.fromOffset(180,70)
+Frame.Position = UDim2.fromScale(0.02,0.45)
 Frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
 Frame.BorderSizePixel = 0
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
@@ -163,7 +138,7 @@ Toggle.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     Toggle.Text = Enabled and "ON" or "OFF"
     Toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,140,0) or Color3.fromRGB(130,0,0)
-    StartFishingLoop(Enabled)
+    StartAutoFishing(Enabled)
 end)
 
-print("=== AUTO PERFECT FISHING READY ===")
+print("=== AUTO PERFECT + INSTANT FISHING READY ===")
