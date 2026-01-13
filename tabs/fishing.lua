@@ -1,4 +1,4 @@
---// QU33N – FISHING TAB (FINAL RAYCAST WALK WATER)
+--// QU33N – FISHING TAB (STABLE FINAL)
 
 repeat task.wait() until _G.QU33N and _G.QU33N.Pages and _G.QU33N.Pages.Fishing
 
@@ -10,7 +10,6 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 page:ClearAllChildren()
@@ -19,13 +18,12 @@ page:ClearAllChildren()
 local Scroll = Instance.new("ScrollingFrame", page)
 Scroll.Size = UDim2.new(1,0,1,0)
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.ScrollBarThickness = 4
 Scroll.BackgroundTransparency = 1
 
-local layout = Instance.new("UIListLayout", Scroll)
-layout.Padding = UDim.new(0,14)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local list = Instance.new("UIListLayout", Scroll)
+list.Padding = UDim.new(0,14)
+list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 Instance.new("UIPadding", Scroll).PaddingTop = UDim.new(0,12)
 
@@ -41,9 +39,9 @@ local function notify(name, state)
 end
 
 --================ TOGGLE =================--
-local function createToggleRow(parent, text, callback)
+local function toggleRow(parent, text, callback)
 	local row = Instance.new("Frame", parent)
-	row.Size = UDim2.new(1,-32,0,42)
+	row.Size = UDim2.new(1,-28,0,42)
 	row.BackgroundTransparency = 1
 
 	local label = Instance.new("TextLabel", row)
@@ -51,8 +49,8 @@ local function createToggleRow(parent, text, callback)
 	label.BackgroundTransparency = 1
 	label.Font = Enum.Font.Gotham
 	label.TextSize = 14
-	label.TextColor3 = Theme.Text
 	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextColor3 = Theme.Text
 	label.Text = text
 
 	local toggle = Instance.new("Frame", row)
@@ -68,22 +66,21 @@ local function createToggleRow(parent, text, callback)
 	Instance.new("UICorner",knob).CornerRadius = UDim.new(1,0)
 
 	local enabled = false
-	local function set(state)
-		enabled = state
-		if enabled then
+	local function set(v)
+		enabled = v
+		if v then
 			knob:TweenPosition(UDim2.new(1,-20,0.5,-9),"Out","Quad",0.2,true)
 			toggle.BackgroundColor3 = Theme.Accent
 		else
 			knob:TweenPosition(UDim2.new(0,2,0.5,-9),"Out","Quad",0.2,true)
 			toggle.BackgroundColor3 = Color3.fromRGB(70,70,70)
 		end
-		callback(enabled)
-		notify(text, enabled)
+		callback(v)
+		notify(text, v)
 	end
 
 	toggle.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1
-		or i.UserInputType == Enum.UserInputType.Touch then
+		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 			set(not enabled)
 		end
 	end)
@@ -114,11 +111,11 @@ Body.ClipsDescendants = true
 local bodyList = Instance.new("UIListLayout", Body)
 bodyList.Padding = UDim.new(0,10)
 
-local opened = false
+local open = false
 Header.MouseButton1Click:Connect(function()
-	opened = not opened
-	Body:TweenSize(opened and UDim2.new(1,-24,0,150) or UDim2.new(1,-24,0,0),"Out","Quad",0.25,true)
-	Card:TweenSize(opened and UDim2.new(1,-28,0,220) or UDim2.new(1,-28,0,50),"Out","Quad",0.25,true)
+	open = not open
+	Body:TweenSize(open and UDim2.new(1,-24,0,140) or UDim2.new(1,-24,0,0),"Out","Quad",0.25,true)
+	Card:TweenSize(open and UDim2.new(1,-28,0,200) or UDim2.new(1,-28,0,50),"Out","Quad",0.25,true)
 end)
 
 --================ AUTO EQUIP ROD =================--
@@ -126,7 +123,7 @@ local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
 local EquipToolFromHotbar = net:WaitForChild("RE/EquipToolFromHotbar")
 
 local equipConn
-createToggleRow(Body,"Auto Equip Rod",function(state)
+toggleRow(Body,"Auto Equip Rod",function(state)
 	if equipConn then equipConn:Disconnect() equipConn=nil end
 	if not state then return end
 	equipConn = RunService.Heartbeat:Connect(function()
@@ -139,33 +136,40 @@ createToggleRow(Body,"Auto Equip Rod",function(state)
 	end)
 end)
 
---================ WALK WATER (RAYCAST) =================--
-local walkConn
+--================ NO ANIMATION FISHING =================--
+local savedTracks = {}
 
-createToggleRow(Body,"Walk Water",function(state)
-	if walkConn then walkConn:Disconnect() walkConn=nil end
-	if not state then return end
+toggleRow(Body,"No Animation Fishing",function(state)
+	local char = LocalPlayer.Character
+	if not char then return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
 
-	walkConn = RunService.Heartbeat:Connect(function()
-		local char = LocalPlayer.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		local hum = char and char:FindFirstChild("Humanoid")
-		if not hrp or not hum then return end
-		if hum:GetState() == Enum.HumanoidStateType.Jumping then return end
-
-		local rayParams = RaycastParams.new()
-		rayParams.FilterDescendantsInstances = {char}
-		rayParams.FilterType = Enum.RaycastFilterType.Blacklist
-
-		local origin = hrp.Position + Vector3.new(0,5,0)
-		local result = Workspace:Raycast(origin, Vector3.new(0,-20,0), rayParams)
-
-		if result and result.Instance and result.Instance.Name:lower():find("water") then
-			hrp.CFrame = CFrame.new(
-				hrp.Position.X,
-				result.Position.Y + 2.9,
-				hrp.Position.Z
-			)
+	if state then
+		for _,track in ipairs(hum:GetPlayingAnimationTracks()) do
+			savedTracks[#savedTracks+1] = track.Animation
+			track:Stop()
 		end
-	end)
+	else
+		for _,anim in ipairs(savedTracks) do
+			pcall(function()
+				hum:LoadAnimation(anim):Play()
+			end)
+		end
+		table.clear(savedTracks)
+	end
+end)
+
+--================ WALK WATER (NO SWIM) =================--
+toggleRow(Body,"Walk Water",function(state)
+	local char = LocalPlayer.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+
+	-- 🔥 INI KUNCINYA
+	hum:SetStateEnabled(Enum.HumanoidStateType.Swimming, not state)
+
+	if state then
+		hum:ChangeState(Enum.HumanoidStateType.Running)
+	end
 end)
