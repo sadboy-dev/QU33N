@@ -19,63 +19,84 @@ local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
 local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
 local MiniEvent = NetFolder:WaitForChild("RE/FishingMinigameChanged")
 
+-- FishingController untuk auto perfect charge
+local FishingController = require(ReplicatedStorage.Controllers.FishingController)
+
 --// VARIABLES
 _G.Blatant2Fishing = false
 _G.DelayBait = 0.05 -- delay pasang umpan
-_G.DelayCast = 0.05 -- delay cast
+_G.DelayCast = 0.05 -- delay lempar lagi
 local FishMiniData = {}
+local MouseReleaseCallback
 
--- MiniEvent listener → sinkronisasi mini-game
+-- Sinkron mini-game
 MiniEvent.OnClientEvent:Connect(function(param1, param2)
     if param1 and param2 then
         FishMiniData = param2
     end
 end)
 
---// FUNCTIONS
-local function getFishCount()
-    local bag = PlayerGui:WaitForChild("Inventory"):WaitForChild("Main")
-        :WaitForChild("Top"):WaitForChild("Options"):WaitForChild("Fish")
-        :WaitForChild("Label"):WaitForChild("BagSize")
-    return tonumber((bag.Text or "0/???"):match("(%d+)/")) or 0
+-- Hook untuk charge release (Auto Perfect)
+local InputControl = require(ReplicatedStorage.Modules.InputControl)
+local OldRegister = InputControl.RegisterMouseReleased
+function InputControl.RegisterMouseReleased(self, param2, callback)
+    MouseReleaseCallback = callback
+    return OldRegister(self, param2, callback)
 end
 
+-- Charge + release rod
+local function CastRod()
+    local Camera = workspace.CurrentCamera
+    if not Camera then return end
+    local Center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+
+    -- Cancel dulu jika ada input lama
+    pcall(CancelFishingInputs.InvokeServer, CancelFishingInputs)
+
+    -- Charge rod
+    pcall(FishingController.RequestChargeFishingRod, FishingController, Center, false)
+
+    -- Tunggu GUI charge bar
+    local ChargeGui = PlayerGui:WaitForChild("Charge",3)
+    if not ChargeGui then return end
+    local Bar = ChargeGui.Main.CanvasGroup.Bar
+
+    repeat task.wait() until Bar.Size.Y.Scale > 0
+
+    local startTick = tick()
+    while Bar:IsDescendantOf(PlayerGui) and Bar.Size.Y.Scale < 0.93 do
+        task.wait()
+        if tick() - startTick > 2 then break end
+    end
+
+    -- Release charge
+    if MouseReleaseCallback then
+        pcall(MouseReleaseCallback)
+    end
+end
+
+-- Blatant2 Loop
 local function Blatant2Loop()
     task.spawn(function()
-        -- Equip rod
+        -- Equip rod dulu
         pcall(EquipToolFromHotbar.FireServer, EquipToolFromHotbar, 1)
         task.wait(0.2)
 
         while _G.Blatant2Fishing do
-            -- Pasang bait cepat
             task.wait(_G.DelayBait)
 
-            -- Charge & cast
-            local serverTime = Workspace:GetServerTimeNow()
-            local success, rodGUID = pcall(function()
-                return ChargeFishingRod:InvokeServer(serverTime)
-            end)
+            -- Cast rod (auto perfect)
+            CastRod()
+            task.wait(0.02)
 
+            -- Mini-game + complete
+            local success, rodGUID = pcall(function()
+                return ChargeFishingRod:InvokeServer(Workspace:GetServerTimeNow())
+            end)
             if success and typeof(rodGUID) == "number" then
                 pcall(RequestFishingMinigame.InvokeServer, RequestFishingMinigame, -1, 0.999, rodGUID)
-
-                -- Tunggu mini-game siap → aman untuk reel
-                local waitStart = tick()
-                repeat
-                    task.wait()
-                until (FishMiniData.LastShift or FishMiniData.LastClick) or tick() - waitStart > 1
-
-                -- Complete fishing
+                task.wait(0.05)
                 pcall(FishingCompleted.FireServer, FishingCompleted)
-
-                -- Pastikan fish masuk inventory sebelum next loop
-                local currentCount = getFishCount()
-                local countWait = tick()
-                repeat
-                    task.wait()
-                until getFishCount() > currentCount or tick() - countWait > 1
-
-                -- Cancel input (reset)
                 pcall(CancelFishingInputs.InvokeServer, CancelFishingInputs)
             end
 
@@ -84,23 +105,22 @@ local function Blatant2Loop()
     end)
 end
 
+-- Start/Stop
 local function StartBlatant2()
     _G.Blatant2Fishing = true
     Blatant2Loop()
 end
-
 local function StopBlatant2()
     _G.Blatant2Fishing = false
 end
 
 local function SetDelayBait(val)
     local n = tonumber(val)
-    if n and n >= 0 then _G.DelayBait = n end
+    if n and n>=0 then _G.DelayBait = n end
 end
-
 local function SetDelayCast(val)
     local n = tonumber(val)
-    if n and n >= 0 then _G.DelayCast = n end
+    if n and n>=0 then _G.DelayCast = n end
 end
 
 --// GUI
@@ -110,8 +130,8 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.fromOffset(200, 120)
-Frame.Position = UDim2.fromScale(0.02, 0.3)
+Frame.Size = UDim2.fromOffset(200,130)
+Frame.Position = UDim2.fromScale(0.02,0.3)
 Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Frame.BorderSizePixel = 0
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
@@ -119,12 +139,12 @@ Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1,0,0,28)
 Title.BackgroundTransparency = 1
-Title.Text = "Blatant2 Fast"
+Title.Text = "Blatant2 Fastest Stable"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 
--- Toggle Button
+-- Toggle
 local Toggle = Instance.new("TextButton", Frame)
 Toggle.Size = UDim2.new(1,-20,0,30)
 Toggle.Position = UDim2.new(0,10,0,35)
@@ -176,4 +196,4 @@ CastInput.TextSize = 14
 Instance.new("UICorner", CastInput).CornerRadius = UDim.new(0,5)
 CastInput.FocusLost:Connect(function(enter) if enter then SetDelayCast(CastInput.Text) end end)
 
-print("=== BLATANT2 FAST & STABLE READY ===")
+print("=== BLATANT2 FASTEST STABLE READY ===")
