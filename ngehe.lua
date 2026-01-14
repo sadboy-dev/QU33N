@@ -1,14 +1,56 @@
+
+local lastRemote = nil
+local lastArgs = nil
+local mapTimeout = 1 -- detik
+
+-- Hook FireServer (READ-ONLY)
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if method == "FireServer" and self:IsA("RemoteEvent") then
+        lastRemote = self
+        lastArgs = args
+
+        task.delay(mapTimeout, function()
+            lastRemote = nil
+            lastArgs = nil
+        end)
+
+        print("=== REMOTE FIRED ===")
+        print("Remote :", self.Name)
+        print("Path   :", self:GetFullName())
+    end
+
+    return oldNamecall(self, ...)
+end)
+
+-- Hook function calls
 for _, fn in ipairs(getgc(true)) do
-    if typeof(fn) == "function" then
+    if typeof(fn) == "function" and not isexecutorclosure(fn) then
         local info = debug.getinfo(fn)
-        if info and info.source and info.source:find("FishingController") then
-            print("Function:", info.name or "anonymous", "Line:", info.linedefined)
+
+        if info and info.source then
+            pcall(function()
+                hookfunction(fn, function(...)
+                    if lastRemote then
+                        print(">>> REMOTE → FUNCTION MAP <<<")
+                        print("Remote :", lastRemote.Name)
+                        print("Module :", info.source)
+                        print("Func   :", info.name or "anonymous")
+                        print("Line   :", info.linedefined)
+                        print("----------------------------")
+                    end
+
+                    return fn(...)
+                end)
+            end)
         end
     end
 end
 
-
-print("[Logger] Function logger aktif untuk", TARGET_MODULE_NAME)
+print("[Logger] Remote → Function mapping aktif")
 
 local newcclosure = newcclosure or function(a) return a end
 local old_pcall = pcall
