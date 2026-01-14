@@ -1,47 +1,12 @@
--- CONFIG
-local TARGET_MODULE_NAME = "FishingController"
-
--- Cari ModuleScript target
-local targetModule
-for _, v in ipairs(getloadedmodules()) do
-    if v.Name == TARGET_MODULE_NAME then
-        targetModule = v
-        break
-    end
-end
-
-if not targetModule then
-    warn("[Logger] Module tidak ditemukan:", TARGET_MODULE_NAME)
-    return
-end
-
-print("[Logger] Target module ditemukan:", targetModule:GetFullName())
-
--- Ambil source path module (untuk filter function)
-local targetSource = targetModule.Source
-
--- Hook function dari module tersebut
 for _, fn in ipairs(getgc(true)) do
-    if typeof(fn) == "function" and not isexecutorclosure(fn) then
+    if typeof(fn) == "function" then
         local info = debug.getinfo(fn)
-
-        if info
-        and info.source
-        and info.source == targetSource then
-            pcall(function()
-                hookfunction(fn, function(...)
-                    print("=== FUNCTION CALLED (TARGET FILE) ===")
-                    print("Module :", TARGET_MODULE_NAME)
-                    print("Name   :", info.name or "anonymous")
-                    print("Line   :", info.linedefined)
-
-                    -- JANGAN ubah args / return
-                    return fn(...)
-                end)
-            end)
+        if info and info.source and info.source:find("FishingController") then
+            print("Function:", info.name or "anonymous", "Line:", info.linedefined)
         end
     end
 end
+
 
 print("[Logger] Function logger aktif untuk", TARGET_MODULE_NAME)
 
