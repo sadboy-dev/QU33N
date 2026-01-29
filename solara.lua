@@ -339,6 +339,9 @@ do
         lbl.TextSize = 13
         lbl.TextColor3 = color or Theme.Text
         lbl.Text = getTimestamp() .. " " .. tostring(text)
+        lbl.TextEditable = false
+        lbl.ClearTextOnFocus = false
+        lbl.TextSelectable = true
     end
 
     -- ===============================
