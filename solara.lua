@@ -203,7 +203,7 @@ local function setActive(tabName)
         btn.TextColor3 = (name == tabName) and Theme.Accent or Theme.SubText
         pageList[name].Visible = (name == tabName)
     end
-    pushLog("Open Tab: "..tabName, Color3.fromRGB(160,200,255))
+    pushLog("Open "..tabName, Color3.fromRGB(160,200,255))
 end
 
 local function createTab(name)
