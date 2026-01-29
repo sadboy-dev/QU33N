@@ -281,50 +281,17 @@ end
 
 -- LOG TAB UI (SCROLLABLE)
 do
-    local page = pageList.Log
+    LogLabel = createCard(
+			"System Log",
+			VERSION .. "\n\nWaiting for script activity...",
+			nil
+		)
+		pushLog("Log Initialized")
+		pushLog("Loaded: " .. VERSION)
 
-    local Card = Instance.new("Frame", page)
-    Card.Size = UDim2.new(1,-6,0,260)
-    Card.BackgroundColor3 = Theme.Panel
-    Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
-
-    local Title = Instance.new("TextLabel", Card)
-    Title.Text = "Log Console — "..VERSION.." (BETA)"
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 15
-    Title.TextColor3 = Theme.Accent
-    Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0,12,0,8)
-    Title.Size = UDim2.new(1,-20,0,28)
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-
-    local LogScroll = Instance.new("ScrollingFrame", Card)
-    LogScroll.Position = UDim2.new(0,12,0,42)
-    LogScroll.Size = UDim2.new(1,-24,1,-52)
-    LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    LogScroll.ScrollBarThickness = 3
-    LogScroll.BackgroundTransparency = 1
-
-    local Layout = Instance.new("UIListLayout", LogScroll)
-    Layout.Padding = UDim.new(0,6)
-
-    RunService.Heartbeat:Connect(function()
-        LogScroll:ClearAllChildren()
-        Layout.Parent = LogScroll
-
-        for _,log in ipairs(Logs) do
-            local lbl = Instance.new("TextLabel", LogScroll)
-            lbl.Size = UDim2.new(1,0,0,22)
-            lbl.BackgroundTransparency = 1
-            lbl.Font = Enum.Font.Code
-            lbl.TextSize = 13
-            lbl.TextWrapped = true
-            lbl.TextXAlignment = Enum.TextXAlignment.Left
-            lbl.TextYAlignment = Enum.TextYAlignment.Top
-            lbl.TextColor3 = log.color
-            lbl.Text = log.text
-        end
-    end)
+	else
+		createCard(name .. " Tab","Temporary content\nWaiting for features...",nil)
+	end
 end
 
 -- INIT
