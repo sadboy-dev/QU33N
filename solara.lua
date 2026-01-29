@@ -202,24 +202,42 @@ local function pushLog(text,color)
     table.insert(Logs,{text=text,color=color or Theme.Text})
 end
 
---// Remote Call Logger (SAFE)
+local RemoteBlacklist = {
+    FishCaughtVisual = true,
+}
+local RemoteThrottle = {}
+local THROTTLE_TIME = 0.25 -- detik
+
+
 local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt,false)
 
 mt.__namecall = newcclosure(function(self, ...)
-    -- cegah recursive hook
     if checkcaller() then
         return old(self, ...)
     end
 
-    local method = getnamecallmethod()
-
     if typeof(self) == "Instance" then
+        local name = self.Name
+        local method = getnamecallmethod()
+
+        -- blacklist hard
+        if RemoteBlacklist[name] then
+            return old(self, ...)
+        end
+
+        -- throttle
+        local now = tick()
+        if RemoteThrottle[name] and (now - RemoteThrottle[name] < THROTTLE_TIME) then
+            return old(self, ...)
+        end
+        RemoteThrottle[name] = now
+
         if self:IsA("RemoteEvent") and method == "FireServer" then
-            pushLog("[SEND] "..self.Name, Color3.fromRGB(120,180,255))
+            pushLog("[SEND] "..name, Color3.fromRGB(120,180,255))
         elseif self:IsA("RemoteFunction") and method == "InvokeServer" then
-            pushLog("[SEND] "..self.Name.." (Invoke)", Color3.fromRGB(120,180,255))
+            pushLog("[SEND] "..name.." (Invoke)", Color3.fromRGB(120,180,255))
         end
     end
 
@@ -227,6 +245,7 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 
 setreadonly(mt,true)
+
 
 
 -- v5 Tab Engine
