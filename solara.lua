@@ -172,13 +172,16 @@ local tabButtons = {}
 local pageList = {}
 
 -- LOG STORAGE
-local Logs = {}
+local LogMessages = {}
+local LogLabel
 
-local function pushLog(typeLabel, text, color)
-    table.insert(Logs, {
-        text = typeLabel..": "..text,
-        color = color or Theme.Text
-    })
+
+local function pushLog(text)
+	local msg = os.date("[%H:%M:%S] ") .. tostring(text)
+	table.insert(LogMessages, msg)
+	if LogLabel then
+		LogLabel.Text = table.concat(LogMessages, "\n")
+	end
 end
 
 -- TAB ENGINE v5
