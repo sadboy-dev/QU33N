@@ -343,7 +343,6 @@ do
 
         tb.TextEditable = false       -- tidak bisa edit
         tb.ClearTextOnFocus = false   -- tidak clear saat fokus
-        tb.TextSelectable = true      -- bisa select & copy
     end
 
     -- ===============================
