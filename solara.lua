@@ -1,9 +1,9 @@
---// QU33N SINGLE FILE — BETA v0.5 (MOBILE TABS FIX)
+--// QU33N SINGLE FILE — BETA v0.6 (COLORED LOG SYSTEM)
 
 repeat task.wait() until game:IsLoaded()
 task.wait(0.2)
 
-local VERSION = "QU33N BETA v0.5"
+local VERSION = "QU33N BETA v0.6"
 
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
@@ -33,10 +33,15 @@ local Theme = {
 	Panel = Color3.fromRGB(26,30,36),
 	Text = Color3.fromRGB(235,235,235),
 	SubText = Color3.fromRGB(155,160,166),
-	Accent = Color3.fromRGB(79,139,255)
+	Accent = Color3.fromRGB(79,139,255),
+
+	LogInfo = Color3.fromRGB(200,200,255),
+	LogWarn = Color3.fromRGB(255,210,120),
+	LogError = Color3.fromRGB(255,120,120),
+	LogSuccess = Color3.fromRGB(120,255,160)
 }
 
--- Responsive Size (UNCHANGED)
+-- Responsive Size
 local function responsiveSize()
 	if isMobile then
 		return UDim2.new(0.66,0,0.75,0)
@@ -162,12 +167,10 @@ TabBar.BackgroundTransparency = 1
 local TabsContainer = Instance.new("ScrollingFrame", TabBar)
 TabsContainer.Size = UDim2.new(1,0,1,0)
 TabsContainer.AutomaticCanvasSize = Enum.AutomaticSize.X
-TabsContainer.CanvasSize = UDim2.new(0,0,0,0)
 TabsContainer.ScrollingDirection = Enum.ScrollingDirection.X
 TabsContainer.ScrollBarThickness = 0
 TabsContainer.BackgroundTransparency = 1
 TabsContainer.BorderSizePixel = 0
-TabsContainer.ElasticBehavior = Enum.ElasticBehavior.Always
 
 local TabLayout = Instance.new("UIListLayout", TabsContainer)
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -186,23 +189,36 @@ local tabButtons = {}
 local LogMessages = {}
 local LogLabel
 
-local function pushLog(text)
-	local msg = os.date("[%H:%M:%S] ") .. tostring(text)
-	table.insert(LogMessages, msg)
+local function colorToTag(color)
+	return string.format("<font color=\"rgb(%d,%d,%d)\">", color.R*255, color.G*255, color.B*255)
+end
+
+local function pushLog(text, logType)
+	local color = Theme.LogInfo
+	if logType == "warn" then color = Theme.LogWarn end
+	if logType == "error" then color = Theme.LogError end
+	if logType == "success" then color = Theme.LogSuccess end
+
+	local timestamp = os.date("[%H:%M:%S] ")
+	local line = colorToTag(color) .. timestamp .. tostring(text) .. "</font>"
+
+	table.insert(LogMessages, line)
+
 	if LogLabel then
+		LogLabel.RichText = true
 		LogLabel.Text = table.concat(LogMessages, "\n")
 	end
 end
 
 local function setActive(tabName)
-	pushLog("Open Tab: " .. tabName)
+	pushLog("Open Tab: " .. tabName, "info")
 	for name,btn in pairs(tabButtons) do
 		btn.TextColor3 = (name == tabName) and Theme.Accent or Theme.SubText
 		pageList[name].Visible = (name == tabName)
 	end
 end
 
--- Create Tab Button (MOBILE SHRINK)
+-- Create Tab Button
 local function createTab(name)
 	local b = Instance.new("TextButton")
 	b.Parent = TabsContainer
@@ -245,8 +261,7 @@ local function createPage(name)
 	local Layout = Instance.new("UIListLayout", Scroll)
 	Layout.Padding = UDim.new(0,14)
 
-	-- Card Builder
-	local function createCard(titleText, descText, buttonText, callback)
+	local function createCard(titleText, descText)
 		local Card = Instance.new("Frame", Scroll)
 		Card.Size = UDim2.new(1, -6, 0, 130)
 		Card.BackgroundColor3 = Theme.Panel
@@ -275,53 +290,26 @@ local function createPage(name)
 		Desc.TextXAlignment = Enum.TextXAlignment.Left
 		Desc.TextYAlignment = Enum.TextYAlignment.Top
 
-		if buttonText then
-			local Btn = Instance.new("TextButton")
-			Btn.Parent = Card
-			Btn.Size = UDim2.new(1, -32, 0, 34)
-			Btn.Position = UDim2.new(0, 16, 1, -46)
-			Btn.BackgroundColor3 = Theme.BG
-			Btn.BorderSizePixel = 0
-			Btn.Text = buttonText
-			Btn.Font = Enum.Font.GothamBold
-			Btn.TextSize = 13
-			Btn.TextColor3 = Theme.Text
-			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 12)
-
-			if callback then Btn.MouseButton1Click:Connect(callback) end
-		end
-
 		return Desc
 	end
 
-	-- INFO TAB (REAL TEXT)
 	if name == "Info" then
-		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.",nil)
-		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.",nil)
-		createCard("Discord Community","Gabung Discord untuk update dan support.","COPY DISCORD",function()
-			if setclipboard then
-				setclipboard("https://discord.gg/chloex")
-				pushLog("Copied Discord Invite")
-			end
-		end)
-		createCard("System Info","GUI Bridge Global\nEnum Safe\nModular Tab System\nMobile Friendly",nil)
+		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.")
+		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.")
+		createCard("Discord Community","https://discord.gg/chloex")
+		createCard("System Info","GUI Bridge Global\nEnum Safe\nModular Tab System\nMobile Friendly")
 
-	-- LOG TAB
 	elseif name == "Log" then
-		LogLabel = createCard(
-			"System Log",
-			VERSION .. "\n\nWaiting for script activity...",
-			nil
-		)
-		pushLog("Log Initialized")
-		pushLog("Loaded: " .. VERSION)
+		LogLabel = createCard("System Log", VERSION .. "\nWaiting for activity...")
+		pushLog("Log Initialized", "success")
+		pushLog("Loaded: " .. VERSION, "success")
 
 	else
-		createCard(name .. " Tab","Temporary content\nWaiting for features...",nil)
+		createCard(name .. " Tab","Temporary content\nWaiting for features...")
 	end
 end
 
--- Tabs list
+-- Tabs
 local tabs = {"Info","Fishing","Auto","Teleport","Misc","Webhook","Log"}
 for _,name in ipairs(tabs) do
 	createTab(name)
@@ -329,6 +317,5 @@ for _,name in ipairs(tabs) do
 end
 
 setActive("Info")
-
-pushLog("GUI Loaded Successfully")
+pushLog("GUI Loaded Successfully", "success")
 notify(VERSION .. " Loaded")
