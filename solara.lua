@@ -324,18 +324,18 @@ do
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
     local function addLog(text, color)
-        local lbl = Instance.new("TextLabel", Content)
-        lbl.Size = UDim2.new(1,0,0,16)
-        lbl.AutomaticSize = Enum.AutomaticSize.Y
-        lbl.BackgroundTransparency = 1
-        lbl.TextWrapped = true
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.TextYAlignment = Enum.TextYAlignment.Top
-        lbl.Font = Enum.Font.Code
-        lbl.TextSize = 13
-        lbl.TextColor3 = color or Theme.Text
-        lbl.Text = text
-    end
+    local lbl = Instance.new("TextLabel", Content)
+    lbl.Size = UDim2.new(1,0,0,16)
+    lbl.AutomaticSize = Enum.AutomaticSize.Y
+    lbl.BackgroundTransparency = 1
+    lbl.TextWrapped = true
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextYAlignment = Enum.TextYAlignment.Top
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = 13
+    lbl.TextColor3 = color or Theme.Text
+    lbl.Text = getTimestamp() .. " " .. tostring(text)
+end
 
     task.spawn(function()
         local last = 0
