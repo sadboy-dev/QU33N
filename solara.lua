@@ -3,7 +3,7 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(0.2)
 
-local VERSION = "QU33N BETA v0.5"
+local VERSION = "QU33N BETA v1.3"
 
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
@@ -154,24 +154,26 @@ CloseBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Tabs Bar
-local TabBar = Instance.new("Frame", Main)
+local TabBar = Instance.new("ScrollingFrame", Main)
 TabBar.Position = UDim2.new(0,16,0,58)
-TabBar.Size = UDim2.new(1,-32,0,40)
+TabBar.Size = UDim2.new(1,-32,0,36)
+TabBar.ScrollingDirection = Enum.ScrollingDirection.X
+TabBar.ScrollBarThickness = 3
 TabBar.BackgroundTransparency = 1
+TabBar.BorderSizePixel = 0
 
-local TabsContainer = Instance.new("ScrollingFrame", TabBar)
-TabsContainer.Size = UDim2.new(1,0,1,0)
-TabsContainer.AutomaticCanvasSize = Enum.AutomaticSize.X
-TabsContainer.CanvasSize = UDim2.new(0,0,0,0)
-TabsContainer.ScrollingDirection = Enum.ScrollingDirection.X
-TabsContainer.ScrollBarThickness = 0
+local TabsContainer = Instance.new("Frame", TabBar)
 TabsContainer.BackgroundTransparency = 1
-TabsContainer.BorderSizePixel = 0
-TabsContainer.ElasticBehavior = Enum.ElasticBehavior.Always
+TabsContainer.Size = UDim2.new(0,0,1,0)
 
 local TabLayout = Instance.new("UIListLayout", TabsContainer)
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.Padding = UDim.new(0, isMobile and 3 or 6)
+TabLayout.Padding = UDim.new(0,3)
+
+TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    TabsHolder.Size = UDim2.new(0, TabLayout.AbsoluteContentSize.X, 1, 0)
+    TabBar.CanvasSize = UDim2.new(0, TabsHolder.Size.X.Offset, 0, 0)
+end)
 
 -- Pages
 local Pages = Instance.new("Frame", Main)
