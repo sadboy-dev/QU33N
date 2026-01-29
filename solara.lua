@@ -192,18 +192,21 @@ local tabButtons = {}
 
 -- Log buffer
 local Logs = {}
-local MAX_LOG = 300
+local LogChanged = Instance.new("BindableEvent")
 
+
+local MAX_LOG = 300
 local function pushLog(text, color)
     table.insert(Logs, {
         text = text,
         color = color or Theme.Text
     })
-
     if #Logs > MAX_LOG then
         table.remove(Logs, 1)
     end
+    LogChanged:Fire()
 end
+
 
 -- v5 Tab Engine
 local function setActive(tabName)
@@ -302,13 +305,12 @@ for name,page in pairs(pageList) do
     end
 end
 
--- LOG TAB UI (USE PAGE SCROLL ONLY)
+-- LOG TAB UI (PAGE SCROLL, STABLE)
 do
-    local page = pageList.Log
+    local page = pageList.Log   -- ScrollingFrame (IMPORTANT)
 
-    -- Card
     local Card = Instance.new("Frame", page)
-    Card.Size = UDim2.new(1,-6,0,140)
+    Card.Size = UDim2.new(1,-6,0,120)
     Card.BackgroundColor3 = Theme.Panel
     Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
 
@@ -323,7 +325,6 @@ do
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.TextYAlignment = Enum.TextYAlignment.Center
 
-    -- Content (NO SCROLL)
     local Content = Instance.new("Frame", Card)
     Content.Position = UDim2.new(0,12,0,42)
     Content.Size = UDim2.new(1,-24,0,0)
@@ -334,7 +335,7 @@ do
     Layout.Padding = UDim.new(0,2)
     Layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
-    -- Update UI from log buffer
+    -- BUILD LOG UI
     local function rebuild()
         Content:ClearAllChildren()
         Layout.Parent = Content
@@ -355,7 +356,7 @@ do
         end
     end
 
-    -- Resize card + auto scroll (tail -f)
+    -- AUTO RESIZE + AUTO SCROLL
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         Card.Size = UDim2.new(
             1,-6,
@@ -363,7 +364,6 @@ do
             Layout.AbsoluteContentSize.Y + 60
         )
 
-        -- auto scroll page (tail -f)
         task.wait()
         page.CanvasPosition = Vector2.new(
             0,
@@ -371,18 +371,13 @@ do
         )
     end)
 
-    -- Live sync (cheap & safe)
-    task.spawn(function()
-        local last = 0
-        while true do
-            if #Logs ~= last then
-                rebuild()
-                last = #Logs
-            end
-            task.wait(0.1)
-        end
-    end)
+    -- LISTEN LOG CHANGE
+    LogChanged.Event:Connect(rebuild)
+
+    -- FIRST BUILD
+    rebuild()
 end
+
 
 -- Init
 setActive("Info")
