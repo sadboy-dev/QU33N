@@ -327,21 +327,23 @@ do
         return os.date("[%H:%M:%S]")
     end
 
+    -- TextBox log agar bisa disalin tapi tetap readonly
     local function addLog(text, color)
-        local lbl = Instance.new("TextBox", Content)
-        lbl.Size = UDim2.new(1,0,0,16)
-        lbl.AutomaticSize = Enum.AutomaticSize.Y
-        lbl.BackgroundTransparency = 1
-        lbl.TextWrapped = true
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.TextYAlignment = Enum.TextYAlignment.Top
-        lbl.Font = Enum.Font.Code
-        lbl.TextSize = 13
-        lbl.TextColor3 = color or Theme.Text
-        lbl.Text = getTimestamp() .. " " .. tostring(text)
-        lbl.TextEditable = false
-        lbl.ClearTextOnFocus = false
-        lbl.TextSelectable = true
+        local tb = Instance.new("TextBox", Content)
+        tb.Size = UDim2.new(1,0,0,16)
+        tb.AutomaticSize = Enum.AutomaticSize.Y
+        tb.BackgroundTransparency = 1
+        tb.TextWrapped = true
+        tb.TextXAlignment = Enum.TextXAlignment.Left
+        tb.TextYAlignment = Enum.TextYAlignment.Top
+        tb.Font = Enum.Font.Code
+        tb.TextSize = 13
+        tb.TextColor3 = color or Theme.Text
+        tb.Text = getTimestamp() .. " " .. tostring(text)
+
+        tb.TextEditable = false       -- tidak bisa edit
+        tb.ClearTextOnFocus = false   -- tidak clear saat fokus
+        tb.TextSelectable = true      -- bisa select & copy
     end
 
     -- ===============================
