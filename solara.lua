@@ -312,25 +312,49 @@ do
     Title.Size = UDim2.new(1,-20,0,28)
     Title.TextXAlignment = Enum.TextXAlignment.Left
 
-    local LogLabel = Instance.new("TextLabel", Card)
-    LogLabel.Position = UDim2.new(0,12,0,42)
-    LogLabel.Size = UDim2.new(1,-24,1,-52)
-    LogLabel.BackgroundTransparency = 1
-    LogLabel.TextWrapped = true
-    LogLabel.TextYAlignment = Enum.TextYAlignment.Top
-    LogLabel.TextXAlignment = Enum.TextXAlignment.Left
-    LogLabel.Font = Enum.Font.Code
-    LogLabel.TextSize = 13
-    LogLabel.RichText = true
+    -- Scroll container
+    local LogScroll = Instance.new("ScrollingFrame", Card)
+    LogScroll.Position = UDim2.new(0,12,0,42)
+    LogScroll.Size = UDim2.new(1,-24,1,-54)
+    LogScroll.CanvasSize = UDim2.new(0,0,0,0)
+    LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    LogScroll.ScrollBarThickness = 4
+    LogScroll.BackgroundTransparency = 1
+    LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
 
-    RunService.Heartbeat:Connect(function()
-        local rich = ""
-        for _,log in ipairs(Logs) do
-            rich ..= string.format('<font color="rgb(%d,%d,%d)">%s</font>\n',
-                log.color.R*255, log.color.G*255, log.color.B*255, log.text)
+    local layout = Instance.new("UIListLayout", LogScroll)
+    layout.Padding = UDim.new(0,6)
+
+    local function addLog(label, color)
+        local txt = Instance.new("TextLabel", LogScroll)
+        txt.Size = UDim2.new(1,-6,0,18)
+        txt.AutomaticSize = Enum.AutomaticSize.Y
+        txt.BackgroundTransparency = 1
+        txt.TextWrapped = true
+        txt.TextXAlignment = Enum.TextXAlignment.Left
+        txt.TextYAlignment = Enum.TextYAlignment.Top
+        txt.Font = Enum.Font.Code
+        txt.TextSize = 13
+        txt.TextColor3 = color
+        txt.Text = label
+
+        task.wait()
+        LogScroll.CanvasPosition = Vector2.new(0, math.max(0,
+            LogScroll.CanvasSize.Y.Offset - LogScroll.AbsoluteWindowSize.Y))
+    end
+
+    -- expose logger
+    _G.QU33N_Log = {
+        Info = function(msg)
+            addLog("Info: "..msg, Color3.fromRGB(160,200,255))
+        end,
+        Warning = function(msg)
+            addLog("Warning: "..msg, Color3.fromRGB(255,200,120))
+        end,
+        Error = function(msg)
+            addLog("Error: "..msg, Color3.fromRGB(255,120,120))
         end
-        LogLabel.Text = rich
-    end)
+    }
 end
 
 -- Init
