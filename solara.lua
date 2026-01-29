@@ -1,8 +1,8 @@
---// QU33N UI — TRUE v5 ENGINE RESTORED
---// BETA v0.9 — Tabs v5 Locked + Scroll Fix + Info Cards Restored
+--// QU33N UI — TRUE v5 ENGINE LOCKED
+--// BETA v1.0 — Text Align Fix + All Tabs Scroll Enabled
 
 repeat task.wait() until game:IsLoaded()
-task.wait(0.3)
+task.wait(0.25)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -12,7 +12,7 @@ local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-local VERSION = "BETA v0.9"
+local VERSION = "BETA v1.0"
 
 -- Notify
 local function notify(text)
@@ -25,12 +25,12 @@ local function notify(text)
     end)
 end
 
--- Clean GUI
+-- Cleanup
 if CoreGui:FindFirstChild("QU33N") then
     CoreGui.QU33N:Destroy()
 end
 
--- Theme (v5)
+-- Theme v5
 local Theme = {
     BG = Color3.fromRGB(15,17,21),
     Panel = Color3.fromRGB(26,30,36),
@@ -39,7 +39,7 @@ local Theme = {
     Accent = Color3.fromRGB(79,139,255)
 }
 
--- Size
+-- Responsive size
 local function responsiveSize()
     if isMobile then
         return UDim2.new(0.62,0,0.78,0)
@@ -55,7 +55,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = CoreGui
 
--- Main
+-- Main Frame
 local Main = Instance.new("Frame", ScreenGui)
 Main.AnchorPoint = Vector2.new(0.5,0.5)
 Main.Position = UDim2.new(0.5,0,0.52,0)
@@ -64,7 +64,7 @@ Main.BackgroundColor3 = Theme.BG
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
 
--- Drag (v5 exact)
+-- Drag v5
 do
     local dragging, dragStart, startPos
     Main.InputBegan:Connect(function(i)
@@ -74,6 +74,7 @@ do
             startPos = Main.Position
         end
     end)
+
     UserInputService.InputChanged:Connect(function(i)
         if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
             local delta = i.Position - dragStart
@@ -83,6 +84,7 @@ do
             )
         end
     end)
+
     UserInputService.InputEnded:Connect(function()
         dragging = false
     end)
@@ -102,6 +104,7 @@ Title.TextColor3 = Theme.Text
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1,0,1,0)
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextYAlignment = Enum.TextYAlignment.Center
 
 -- Buttons
 local btnContainer = Instance.new("Frame", Header)
@@ -155,16 +158,16 @@ CloseBtn.MouseButton1Click:Connect(function()
     Main:Destroy()
 end)
 
--- === TAB BAR (SCROLL HORIZONTAL SAFE) ===
+-- TAB BAR (horizontal scroll, v5 width)
 local TabBar = Instance.new("ScrollingFrame", Main)
 TabBar.Position = UDim2.new(0,16,0,58)
 TabBar.Size = UDim2.new(1,-32,0,36)
+TabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
 TabBar.CanvasSize = UDim2.new(0,0,0,0)
-TabBar.ScrollBarThickness = 3
 TabBar.ScrollingDirection = Enum.ScrollingDirection.X
+TabBar.ScrollBarThickness = 3
 TabBar.BackgroundTransparency = 1
 TabBar.BorderSizePixel = 0
-TabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
 
 local TabsContainer = Instance.new("Frame", TabBar)
 TabsContainer.Size = UDim2.new(0,0,1,0)
@@ -178,7 +181,7 @@ TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabsContainer.Size = UDim2.new(0, TabLayout.AbsoluteContentSize.X, 1, 0)
 end)
 
--- === PAGES (SCROLL VERTICAL FIX) ===
+-- Pages
 local Pages = Instance.new("Frame", Main)
 Pages.Position = UDim2.new(0,16,0,104)
 Pages.Size = UDim2.new(1,-32,1,-120)
@@ -187,13 +190,13 @@ Pages.BackgroundTransparency = 1
 local pageList = {}
 local tabButtons = {}
 
--- === LOG SYSTEM ===
+-- Log buffer
 local Logs = {}
 local function pushLog(text,color)
     table.insert(Logs,{text=text,color=color or Theme.Text})
 end
 
--- === TAB ENGINE v5 ===
+-- v5 Tab Engine
 local function setActive(tabName)
     for name,btn in pairs(tabButtons) do
         btn.TextColor3 = (name == tabName) and Theme.Accent or Theme.SubText
@@ -205,7 +208,7 @@ end
 local function createTab(name)
     local b = Instance.new("TextButton")
     b.Parent = TabsContainer
-    b.Size = UDim2.new(0,70,1,0) -- v5 LOCKED
+    b.Size = UDim2.new(0,70,1,0) -- v5 locked
     b.BackgroundColor3 = Theme.Panel
     b.Text = name
     b.Font = Enum.Font.Gotham
@@ -220,6 +223,7 @@ local function createTab(name)
     tabButtons[name] = b
 end
 
+-- Scroll Page Factory
 local function createScrollPage(name)
     local scroll = Instance.new("ScrollingFrame", Pages)
     scroll.Size = UDim2.new(1,0,1,0)
@@ -230,20 +234,26 @@ local function createScrollPage(name)
     scroll.Visible = false
     scroll.ScrollingDirection = Enum.ScrollingDirection.Y
 
+    local padding = Instance.new("UIPadding", scroll)
+    padding.PaddingTop = UDim.new(0,8)
+    padding.PaddingLeft = UDim.new(0,4)
+    padding.PaddingRight = UDim.new(0,4)
+
     local layout = Instance.new("UIListLayout", scroll)
     layout.Padding = UDim.new(0,14)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
     pageList[name] = scroll
 end
 
--- Tabs
+-- Tabs list
 local tabs = {"Info","Fishing","Auto","Teleport","Misc","Webhook","Log"}
 for _,name in ipairs(tabs) do
     createTab(name)
     createScrollPage(name)
 end
 
--- === CARD BUILDER ===
+-- Card Builder
 local function createCard(parent,title,desc)
     local Card = Instance.new("Frame", parent)
     Card.Size = UDim2.new(1,-6,0,130)
@@ -259,6 +269,7 @@ local function createCard(parent,title,desc)
     Title.Position = UDim2.new(0,16,0,14)
     Title.Size = UDim2.new(1,-32,0,22)
     Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextYAlignment = Enum.TextYAlignment.Center
 
     local Desc = Instance.new("TextLabel", Card)
     Desc.Text = desc
@@ -269,13 +280,18 @@ local function createCard(parent,title,desc)
     Desc.Position = UDim2.new(0,16,0,44)
     Desc.Size = UDim2.new(1,-32,0,60)
     Desc.TextWrapped = true
+    Desc.TextXAlignment = Enum.TextXAlignment.Left
+    Desc.TextYAlignment = Enum.TextYAlignment.Top
 end
 
--- INFO CONTENT RESTORED
-createCard(pageList.Info,"QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.")
-createCard(pageList.Info,"Fast Fishing","Support Blatant V1 & V2. Optimized FishIt.")
-createCard(pageList.Info,"Discord Community","discord.gg/chloex")
-createCard(pageList.Info,"System Info","Enum Safe • Modular Tabs • Mobile Friendly")
+-- Fill ALL tabs like Info (temp)
+for name,page in pairs(pageList) do
+    if name ~= "Log" then
+        createCard(page,"QU33N UI","Temporary content placeholder for "..name.." tab.")
+        createCard(page,"Fast Fishing","Feature system will be added later.")
+        createCard(page,"System","Tab active & scroll working.")
+    end
+end
 
 -- LOG TAB UI
 do
@@ -302,6 +318,7 @@ do
     LogLabel.BackgroundTransparency = 1
     LogLabel.TextWrapped = true
     LogLabel.TextYAlignment = Enum.TextYAlignment.Top
+    LogLabel.TextXAlignment = Enum.TextXAlignment.Left
     LogLabel.Font = Enum.Font.Code
     LogLabel.TextSize = 13
     LogLabel.RichText = true
@@ -316,7 +333,7 @@ do
     end)
 end
 
--- Start
+-- Init
 setActive("Info")
 pushLog("GUI Loaded Successfully", Color3.fromRGB(120,255,160))
 notify("QU33N Loaded — "..VERSION)
