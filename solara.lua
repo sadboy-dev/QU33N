@@ -192,19 +192,8 @@ local tabButtons = {}
 
 -- Log buffer
 local Logs = {}
-local LogChanged = Instance.new("BindableEvent")
-
-
-local MAX_LOG = 300
-local function pushLog(text, color)
-    table.insert(Logs, {
-        text = text,
-        color = color or Theme.Text
-    })
-    if #Logs > MAX_LOG then
-        table.remove(Logs, 1)
-    end
-    LogChanged:Fire()
+local function pushLog(text,color)
+    table.insert(Logs,{text=text,color=color or Theme.Text})
 end
 
 
@@ -305,12 +294,12 @@ for name,page in pairs(pageList) do
     end
 end
 
--- LOG TAB UI (PAGE SCROLL, STABLE)
+-- LOG TAB UI (SINGLE SCROLL – SAFE)
 do
-    local page = pageList.Log   -- ScrollingFrame (IMPORTANT)
+    local page = pageList.Log
 
     local Card = Instance.new("Frame", page)
-    Card.Size = UDim2.new(1,-6,0,120)
+    Card.Size = UDim2.new(1,-6,0,200)
     Card.BackgroundColor3 = Theme.Panel
     Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
 
@@ -323,7 +312,6 @@ do
     Title.Position = UDim2.new(0,12,0,8)
     Title.Size = UDim2.new(1,-24,0,28)
     Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextYAlignment = Enum.TextYAlignment.Center
 
     local Content = Instance.new("Frame", Card)
     Content.Position = UDim2.new(0,12,0,42)
@@ -331,51 +319,41 @@ do
     Content.BackgroundTransparency = 1
     Content.AutomaticSize = Enum.AutomaticSize.Y
 
-    local Layout = Instance.new("UIListLayout", Content)
-    Layout.Padding = UDim.new(0,2)
-    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    local layout = Instance.new("UIListLayout", Content)
+    layout.Padding = UDim.new(0,2)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
-    -- BUILD LOG UI
-    local function rebuild()
-        Content:ClearAllChildren()
-        Layout.Parent = Content
-
-        for _,log in ipairs(Logs) do
-            local lbl = Instance.new("TextLabel")
-            lbl.BackgroundTransparency = 1
-            lbl.Size = UDim2.new(1,0,0,16)
-            lbl.AutomaticSize = Enum.AutomaticSize.Y
-            lbl.TextWrapped = true
-            lbl.TextXAlignment = Enum.TextXAlignment.Left
-            lbl.TextYAlignment = Enum.TextYAlignment.Top
-            lbl.Font = Enum.Font.Code
-            lbl.TextSize = 13
-            lbl.TextColor3 = log.color
-            lbl.Text = log.text
-            lbl.Parent = Content
-        end
+    local function addLog(text, color)
+        local lbl = Instance.new("TextLabel", Content)
+        lbl.Size = UDim2.new(1,0,0,16)
+        lbl.AutomaticSize = Enum.AutomaticSize.Y
+        lbl.BackgroundTransparency = 1
+        lbl.TextWrapped = true
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.TextYAlignment = Enum.TextYAlignment.Top
+        lbl.Font = Enum.Font.Code
+        lbl.TextSize = 13
+        lbl.TextColor3 = color or Theme.Text
+        lbl.Text = text
     end
 
-    -- AUTO RESIZE + AUTO SCROLL
-    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Card.Size = UDim2.new(
-            1,-6,
-            0,
-            Layout.AbsoluteContentSize.Y + 60
-        )
-
-        task.wait()
-        page.CanvasPosition = Vector2.new(
-            0,
-            math.max(0, page.CanvasSize.Y.Offset - page.AbsoluteWindowSize.Y)
-        )
+    task.spawn(function()
+        local last = 0
+        while true do
+            if #Logs > last then
+                for i = last+1, #Logs do
+                    addLog(Logs[i].text, Logs[i].color)
+                end
+                last = #Logs
+            end
+            task.wait(0.1)
+        end
     end)
 
-    -- LISTEN LOG CHANGE
-    LogChanged.Event:Connect(rebuild)
-
-    -- FIRST BUILD
-    rebuild()
+    -- Auto resize card height
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Card.Size = UDim2.new(1,-6,0, layout.AbsoluteContentSize.Y + 60)
+    end)
 end
 
 
