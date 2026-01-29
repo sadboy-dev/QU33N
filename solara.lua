@@ -328,7 +328,7 @@ do
     end
 
     local function addLog(text, color)
-        local lbl = Instance.new("TextLabel", Content)
+        local lbl = Instance.new("TextBox", Content)
         lbl.Size = UDim2.new(1,0,0,16)
         lbl.AutomaticSize = Enum.AutomaticSize.Y
         lbl.BackgroundTransparency = 1
