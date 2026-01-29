@@ -192,8 +192,17 @@ local tabButtons = {}
 
 -- Log buffer
 local Logs = {}
-local function pushLog(text,color)
-    table.insert(Logs,{text=text,color=color or Theme.Text})
+local MAX_LOG = 300
+
+local function pushLog(text, color)
+    table.insert(Logs, {
+        text = text,
+        color = color or Theme.Text
+    })
+
+    if #Logs > MAX_LOG then
+        table.remove(Logs, 1)
+    end
 end
 
 -- v5 Tab Engine
@@ -293,17 +302,16 @@ for name,page in pairs(pageList) do
     end
 end
 
--- LOG TAB UI (CARD + TIGHT SPACING)
+-- LOG TAB UI (USE PAGE SCROLL ONLY)
 do
     local page = pageList.Log
 
-    -- Card container
+    -- Card
     local Card = Instance.new("Frame", page)
-    Card.Size = UDim2.new(1,-6,0,260)
+    Card.Size = UDim2.new(1,-6,0,140)
     Card.BackgroundColor3 = Theme.Panel
     Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
 
-    -- Title
     local Title = Instance.new("TextLabel", Card)
     Title.Text = "Log Console — "..VERSION
     Title.Font = Enum.Font.GothamBold
@@ -315,43 +323,60 @@ do
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.TextYAlignment = Enum.TextYAlignment.Center
 
-    -- Scroll INSIDE card
-    local LogScroll = Instance.new("ScrollingFrame", Card)
-    LogScroll.Position = UDim2.new(0,12,0,42)
-    LogScroll.Size = UDim2.new(1,-24,1,-52)
-    LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    LogScroll.ScrollBarThickness = 3
-    LogScroll.CanvasSize = UDim2.new(0,0,0,0)
-    LogScroll.BackgroundTransparency = 1
-    LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+    -- Content (NO SCROLL)
+    local Content = Instance.new("Frame", Card)
+    Content.Position = UDim2.new(0,12,0,42)
+    Content.Size = UDim2.new(1,-24,0,0)
+    Content.BackgroundTransparency = 1
+    Content.AutomaticSize = Enum.AutomaticSize.Y
 
-    local layout = Instance.new("UIListLayout", LogScroll)
-    layout.Padding = UDim.new(0,2) -- 🔥 RAPAT seperti console
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    local Layout = Instance.new("UIListLayout", Content)
+    Layout.Padding = UDim.new(0,2)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 
-    -- Add log line
-    local function addLog(text, color)
-        local lbl = Instance.new("TextLabel", LogScroll)
-        lbl.Size = UDim2.new(1,0,0,16)
-        lbl.AutomaticSize = Enum.AutomaticSize.Y
-        lbl.BackgroundTransparency = 1
-        lbl.TextWrapped = true
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.TextYAlignment = Enum.TextYAlignment.Top
-        lbl.Font = Enum.Font.Code
-        lbl.TextSize = 13
-        lbl.TextColor3 = color or Theme.Text
-        lbl.Text = text
+    -- Update UI from log buffer
+    local function rebuild()
+        Content:ClearAllChildren()
+        Layout.Parent = Content
+
+        for _,log in ipairs(Logs) do
+            local lbl = Instance.new("TextLabel")
+            lbl.BackgroundTransparency = 1
+            lbl.Size = UDim2.new(1,0,0,16)
+            lbl.AutomaticSize = Enum.AutomaticSize.Y
+            lbl.TextWrapped = true
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextYAlignment = Enum.TextYAlignment.Top
+            lbl.Font = Enum.Font.Code
+            lbl.TextSize = 13
+            lbl.TextColor3 = log.color
+            lbl.Text = log.text
+            lbl.Parent = Content
+        end
     end
 
-    -- Sync log buffer
+    -- Resize card + auto scroll (tail -f)
+    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Card.Size = UDim2.new(
+            1,-6,
+            0,
+            Layout.AbsoluteContentSize.Y + 60
+        )
+
+        -- auto scroll page (tail -f)
+        task.wait()
+        page.CanvasPosition = Vector2.new(
+            0,
+            math.max(0, page.CanvasSize.Y.Offset - page.AbsoluteWindowSize.Y)
+        )
+    end)
+
+    -- Live sync (cheap & safe)
     task.spawn(function()
         local last = 0
         while true do
-            if #Logs > last then
-                for i = last+1, #Logs do
-                    addLog(Logs[i].text, Logs[i].color)
-                end
+            if #Logs ~= last then
+                rebuild()
                 last = #Logs
             end
             task.wait(0.1)
