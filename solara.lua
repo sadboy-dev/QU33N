@@ -208,6 +208,8 @@ local RemoteBlacklist = {
 local RemoteThrottle = {}
 local THROTTLE_TIME = 0.25 -- detik
 
+local PendingRemotes = {} -- [RemoteName] = {time=number, index=number}
+local PAIR_TIMEOUT = 3 -- detik
 
 local mt = getrawmetatable(game)
 local old = mt.__namecall
@@ -235,10 +237,22 @@ mt.__namecall = newcclosure(function(self, ...)
         RemoteThrottle[name] = now
 
         if self:IsA("RemoteEvent") and method == "FireServer" then
-            pushLog("[SEND] "..name, Color3.fromRGB(120,180,255))
+            local idx = #Logs + 1
+            PendingRemotes[self.Name] = {
+            time = tick(),
+            index = idx
+            }
+            pushLog("[SEND] "..self.Name.." → waiting...", Color3.fromRGB(120,180,255))
+
         elseif self:IsA("RemoteFunction") and method == "InvokeServer" then
-            pushLog("[SEND] "..name.." (Invoke)", Color3.fromRGB(120,180,255))
+            local idx = #Logs + 1
+            PendingRemotes[self.Name] = {
+                time = tick(),
+                index = idx
+            }
+            pushLog("[SEND] "..self.Name.." (Invoke) → waiting...", Color3.fromRGB(120,180,255))
         end
+
     end
 
     return old(self, ...)
