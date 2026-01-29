@@ -196,6 +196,27 @@ local function pushLog(text,color)
     table.insert(Logs,{text=text,color=color or Theme.Text})
 end
 
+--// Remote Call Logger (Client -> Server)
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt,false)
+
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if typeof(self) == "Instance" and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+        if method == "FireServer" then
+            pushLog("[SEND] "..self.Name, Color3.fromRGB(120,180,255))
+        elseif method == "InvokeServer" then
+            pushLog("[SEND] "..self.Name.." (Invoke)", Color3.fromRGB(120,180,255))
+        end
+    end
+
+    return old(self, ...)
+end)
+
+setreadonly(mt,true)
 
 -- v5 Tab Engine
 local function setActive(tabName)
