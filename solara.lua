@@ -1,321 +1,264 @@
---// QU33N SINGLE FILE — BETA v0.6 (COLORED LOG SYSTEM)
+--// QU33N UI — FULL SINGLE FILE
+--// Version: BETA v0.7 (RESTORE v5 TAB ENGINE)
 
-repeat task.wait() until game:IsLoaded()
-task.wait(0.2)
+-- SERVICES
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
 
-local VERSION = "QU33N BETA v0.6"
+-- DEVICE DETECT
+local IS_MOBILE = UIS.TouchEnabled and not UIS.KeyboardEnabled
 
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-local StarterGui = game:GetService("StarterGui")
+-- ROOT GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "QU33N_UI"
+ScreenGui.Parent = Player:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
-local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+-- MAIN FRAME
+local Main = Instance.new("Frame")
+Main.Parent = ScreenGui
+Main.BackgroundColor3 = Color3.fromRGB(22,22,22)
+Main.BorderSizePixel = 0
+Main.Size = IS_MOBILE and UDim2.new(0, 340, 0, 420) or UDim2.new(0, 520, 0, 520)
+Main.Position = UDim2.new(0.5, -260, 0.5, -260)
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 18)
 
--- Notify
-local function notify(text)
-	pcall(function()
-		StarterGui:SetCore("SendNotification", {
-			Title = "QU33N",
-			Text = text,
-			Duration = 3
-		})
-	end)
-end
-
--- Cleanup old GUI
-if CoreGui:FindFirstChild("QU33N") then
-	CoreGui.QU33N:Destroy()
-end
-
--- Theme
+-- THEME
 local Theme = {
-	BG = Color3.fromRGB(15,17,21),
-	Panel = Color3.fromRGB(26,30,36),
-	Text = Color3.fromRGB(235,235,235),
-	SubText = Color3.fromRGB(155,160,166),
-	Accent = Color3.fromRGB(79,139,255),
-
-	LogInfo = Color3.fromRGB(200,200,255),
-	LogWarn = Color3.fromRGB(255,210,120),
-	LogError = Color3.fromRGB(255,120,120),
-	LogSuccess = Color3.fromRGB(120,255,160)
+	BG = Color3.fromRGB(22,22,22),
+	Panel = Color3.fromRGB(30,30,30),
+	Accent = Color3.fromRGB(175,120,255),
+	Text = Color3.fromRGB(230,230,230),
+	SubText = Color3.fromRGB(160,160,160),
 }
 
--- Responsive Size
-local function responsiveSize()
-	if isMobile then
-		return UDim2.new(0.66,0,0.75,0)
-	else
-		return UDim2.new(0.38,0,0.72,0)
-	end
-end
-
--- ScreenGui
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "QU33N"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.DisplayOrder = 999999
-ScreenGui.Parent = CoreGui
-
--- Main Frame
-local Main = Instance.new("Frame", ScreenGui)
-Main.AnchorPoint = Vector2.new(0.5,0.5)
-Main.Position = UDim2.new(0.5,0,0.52,0)
-Main.Size = responsiveSize()
-Main.BackgroundColor3 = Theme.BG
-Main.ClipsDescendants = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
-
--- Drag Window
-do
-	local dragging, dragStart, startPos
-	Main.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = i.Position
-			startPos = Main.Position
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-			local delta = i.Position - dragStart
-			Main.Position = UDim2.new(
-				startPos.X.Scale, startPos.X.Offset + delta.X,
-				startPos.Y.Scale, startPos.Y.Offset + delta.Y
-			)
-		end
-	end)
-	UserInputService.InputEnded:Connect(function()
-		dragging = false
-	end)
-end
-
--- Header
+-- HEADER
 local Header = Instance.new("Frame", Main)
-Header.Position = UDim2.new(0,16,0,6)
-Header.Size = UDim2.new(1,-32,0,50)
+Header.Size = UDim2.new(1, 0, 0, 50)
 Header.BackgroundTransparency = 1
 
 local Title = Instance.new("TextLabel", Header)
-Title.Text = "QU33N"
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.new(0, 16, 0, 0)
+Title.Text = "QU33N UI — BETA v0.7"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
-Title.TextColor3 = Theme.Text
+Title.TextColor3 = Theme.Accent
 Title.BackgroundTransparency = 1
-Title.Size = UDim2.new(1,0,1,0)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Buttons
-local btnContainer = Instance.new("Frame", Header)
-btnContainer.AnchorPoint = Vector2.new(1,0.5)
-btnContainer.Position = UDim2.new(1,-6,0.5,0)
-btnContainer.Size = UDim2.new(0,80,1,0)
-btnContainer.BackgroundTransparency = 1
+-- BUTTONS
+local function makeBtn(text, posX, callback)
+	local Btn = Instance.new("TextButton", Header)
+	Btn.Size = UDim2.new(0, 34, 0, 28)
+	Btn.Position = UDim2.new(1, posX, 0.5, -14)
+	Btn.Text = text
+	Btn.Font = Enum.Font.GothamBold
+	Btn.TextSize = 14
+	Btn.BackgroundColor3 = Theme.Panel
+	Btn.TextColor3 = Theme.Text
+	Btn.BorderSizePixel = 0
+	Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
+	Btn.MouseButton1Click:Connect(callback)
+end
 
-local CloseBtn = Instance.new("TextButton", btnContainer)
-CloseBtn.Size = UDim2.new(0,35,0,28)
-CloseBtn.Position = UDim2.new(0.55,0,0.15,0)
-CloseBtn.Text = "X"
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextColor3 = Theme.Text
-CloseBtn.BackgroundColor3 = Theme.Panel
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0,6)
-
-local MinBtn = Instance.new("TextButton", btnContainer)
-MinBtn.Size = UDim2.new(0,35,0,28)
-MinBtn.Position = UDim2.new(0,0,0.15,0)
-MinBtn.Text = "_"
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextColor3 = Theme.Text
-MinBtn.BackgroundColor3 = Theme.Panel
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0,6)
-
--- Minimize bubble
-local logo = Instance.new("TextButton", ScreenGui)
-logo.Text="⚡"
-logo.Font=Enum.Font.GothamBold
-logo.TextSize=22
-logo.TextColor3=Theme.Accent
-logo.Size = UDim2.new(0,44,0,44)
-logo.Position = UDim2.new(0,20,0.5,-22)
-logo.BackgroundColor3=Theme.Panel
-logo.Visible=false
-logo.AnchorPoint = Vector2.new(0,0.5)
-Instance.new("UICorner",logo).CornerRadius = UDim.new(1,0)
-
-logo.MouseButton1Click:Connect(function()
-	Main.Visible = true
-	logo.Visible = false
+makeBtn("-", -80, function()
+	Main.Visible = not Main.Visible
 end)
 
-MinBtn.MouseButton1Click:Connect(function()
-	Main.Visible = false
-	logo.Visible = true
+makeBtn("X", -40, function()
+	ScreenGui:Destroy()
 end)
 
-CloseBtn.MouseButton1Click:Connect(function()
-	Main:Destroy()
-end)
-
--- Tabs Bar
-local TabBar = Instance.new("Frame", Main)
-TabBar.Position = UDim2.new(0,16,0,58)
-TabBar.Size = UDim2.new(1,-32,0,40)
+-- TAB BAR (v5 RESTORED)
+local TabBar = Instance.new("ScrollingFrame", Main)
+TabBar.Position = UDim2.new(0, 0, 0, 50)
+TabBar.Size = UDim2.new(1, 0, 0, 46)
+TabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+TabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+TabBar.ScrollingDirection = Enum.ScrollingDirection.X
+TabBar.ScrollBarThickness = 3
 TabBar.BackgroundTransparency = 1
+TabBar.BorderSizePixel = 0
 
-local TabsContainer = Instance.new("ScrollingFrame", TabBar)
-TabsContainer.Size = UDim2.new(1,0,1,0)
-TabsContainer.AutomaticCanvasSize = Enum.AutomaticSize.X
-TabsContainer.ScrollingDirection = Enum.ScrollingDirection.X
-TabsContainer.ScrollBarThickness = 0
-TabsContainer.BackgroundTransparency = 1
-TabsContainer.BorderSizePixel = 0
-
-local TabLayout = Instance.new("UIListLayout", TabsContainer)
+local TabLayout = Instance.new("UIListLayout", TabBar)
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.Padding = UDim.new(0, isMobile and 3 or 6)
+TabLayout.Padding = UDim.new(0, 8)
 
--- Pages
-local Pages = Instance.new("Frame", Main)
-Pages.Position = UDim2.new(0,16,0,104)
-Pages.Size = UDim2.new(1,-32,1,-120)
-Pages.BackgroundTransparency = 1
+-- CONTENT HOLDER
+local Pages = Instance.new("Folder", Main)
+Pages.Name = "Pages"
 
-local pageList = {}
-local tabButtons = {}
+local PageHolder = Instance.new("Frame", Main)
+PageHolder.Position = UDim2.new(0, 0, 0, 96)
+PageHolder.Size = UDim2.new(1, 0, 1, -96)
+PageHolder.BackgroundTransparency = 1
 
--- LOG SYSTEM
-local LogMessages = {}
-local LogLabel
+-- LOG BUFFER
+local LogBuffer = {}
+local LogLabel = nil
 
-local function colorToTag(color)
-	return string.format("<font color=\"rgb(%d,%d,%d)\">", color.R*255, color.G*255, color.B*255)
-end
-
-local function pushLog(text, logType)
-	local color = Theme.LogInfo
-	if logType == "warn" then color = Theme.LogWarn end
-	if logType == "error" then color = Theme.LogError end
-	if logType == "success" then color = Theme.LogSuccess end
-
-	local timestamp = os.date("[%H:%M:%S] ")
-	local line = colorToTag(color) .. timestamp .. tostring(text) .. "</font>"
-
-	table.insert(LogMessages, line)
-
+local function pushLog(text, color)
+	table.insert(LogBuffer, {text, color})
 	if LogLabel then
+		local out = ""
+		for _, entry in ipairs(LogBuffer) do
+			out ..= string.format("<font color='rgb(%d,%d,%d)'>%s</font>\n",
+				entry[2].R*255, entry[2].G*255, entry[2].B*255, entry[1]
+			)
+		end
 		LogLabel.RichText = true
-		LogLabel.Text = table.concat(LogMessages, "\n")
+		LogLabel.Text = out
 	end
 end
 
-local function setActive(tabName)
-	pushLog("Open Tab: " .. tabName, "info")
-	for name,btn in pairs(tabButtons) do
-		btn.TextColor3 = (name == tabName) and Theme.Accent or Theme.SubText
-		pageList[name].Visible = (name == tabName)
-	end
+-- PAGE CREATOR
+local function createPage(name)
+	local Page = Instance.new("Frame", PageHolder)
+	Page.Name = name
+	Page.Size = UDim2.new(1, 0, 1, 0)
+	Page.Visible = false
+	Page.BackgroundTransparency = 1
+
+	local Scroll = Instance.new("ScrollingFrame", Page)
+	Scroll.Size = UDim2.new(1, 0, 1, 0)
+	Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	Scroll.ScrollBarThickness = 4
+	Scroll.BackgroundTransparency = 1
+
+	local Layout = Instance.new("UIListLayout", Scroll)
+	Layout.Padding = UDim.new(0, 12)
+	Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+	Pages[name] = Scroll
+	return Scroll
 end
 
--- Create Tab Button
+-- CARD BUILDER
+local function createCard(page, title, desc)
+	local Card = Instance.new("Frame", page)
+	Card.Size = UDim2.new(1, -12, 0, 120)
+	Card.BackgroundColor3 = Theme.Panel
+	Card.BorderSizePixel = 0
+	Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 16)
+
+	local Title = Instance.new("TextLabel", Card)
+	Title.Text = title
+	Title.Font = Enum.Font.GothamBold
+	Title.TextSize = 16
+	Title.TextColor3 = Theme.Accent
+	Title.BackgroundTransparency = 1
+	Title.Position = UDim2.new(0, 16, 0, 12)
+	Title.Size = UDim2.new(1, -32, 0, 22)
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+
+	local Desc = Instance.new("TextLabel", Card)
+	Desc.Text = desc
+	Desc.Font = Enum.Font.Gotham
+	Desc.TextSize = 13
+	Desc.TextColor3 = Theme.SubText
+	Desc.BackgroundTransparency = 1
+	Desc.Position = UDim2.new(0, 16, 0, 42)
+	Desc.Size = UDim2.new(1, -32, 0, 60)
+	Desc.TextWrapped = true
+	Desc.TextXAlignment = Enum.TextXAlignment.Left
+	Desc.TextYAlignment = Enum.TextYAlignment.Top
+end
+
+-- TAB SYSTEM (RESTORED v5)
+local Tabs = {}
+local ActiveTab = nil
+
+local function setActive(name)
+	for _, pg in pairs(PageHolder:GetChildren()) do
+		pg.Visible = false
+	end
+	if PageHolder:FindFirstChild(name) then
+		PageHolder[name].Visible = true
+	end
+	pushLog("Open Tab: "..name, Color3.fromRGB(150,200,255))
+end
+
 local function createTab(name)
-	local b = Instance.new("TextButton")
-	b.Parent = TabsContainer
+	local Btn = Instance.new("TextButton", TabBar)
+	Btn.Text = name
+	Btn.Font = Enum.Font.GothamBold
+	Btn.TextSize = 14
+	Btn.Size = UDim2.new(0, 120, 0, 34)
+	Btn.BackgroundColor3 = Theme.Panel
+	Btn.TextColor3 = Theme.Text
+	Btn.BorderSizePixel = 0
+	Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 12)
 
-	b.AutomaticSize = Enum.AutomaticSize.X
-	b.Size = UDim2.new(0, isMobile and 48 or 70, 1, 0)
-
-	b.BackgroundColor3 = Theme.Panel
-	b.Text = " "..name.." "
-	b.Font = Enum.Font.Gotham
-	b.TextSize = isMobile and 11 or 12
-	b.TextColor3 = Theme.SubText
-	b.BorderSizePixel = 0
-
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0,12)
-
-	b.MouseButton1Click:Connect(function()
+	Btn.MouseButton1Click:Connect(function()
 		setActive(name)
 	end)
 
-	tabButtons[name] = b
-end
-
--- Create Page
-local function createPage(name)
-	local p = Instance.new("Frame", Pages)
-	p.Size = UDim2.new(1,0,1,0)
-	p.BackgroundTransparency = 1
-	p.Visible = false
-	pageList[name] = p
-
-	local Scroll = Instance.new("ScrollingFrame", p)
-	Scroll.Size = UDim2.new(1,0,1,0)
-	Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
-	Scroll.ScrollBarThickness = 5
-	Scroll.BackgroundTransparency = 1
-	Scroll.BorderSizePixel = 0
-
-	local Layout = Instance.new("UIListLayout", Scroll)
-	Layout.Padding = UDim.new(0,14)
-
-	local function createCard(titleText, descText)
-		local Card = Instance.new("Frame", Scroll)
-		Card.Size = UDim2.new(1, -6, 0, 130)
-		Card.BackgroundColor3 = Theme.Panel
-		Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 16)
-
-		local Title = Instance.new("TextLabel", Card)
-		Title.Text = titleText
-		Title.Font = Enum.Font.GothamBold
-		Title.TextSize = 16
-		Title.TextColor3 = Theme.Accent
-		Title.BackgroundTransparency = 1
-		Title.Position = UDim2.new(0, 16, 0, 14)
-		Title.Size = UDim2.new(1, -32, 0, 22)
-		Title.TextXAlignment = Enum.TextXAlignment.Left
-
-		local Desc = Instance.new("TextLabel", Card)
-		Desc.Name = "Desc"
-		Desc.Text = descText
-		Desc.Font = Enum.Font.Gotham
-		Desc.TextSize = 13
-		Desc.TextColor3 = Theme.SubText
-		Desc.BackgroundTransparency = 1
-		Desc.Position = UDim2.new(0, 16, 0, 44)
-		Desc.Size = UDim2.new(1, -32, 0, 64)
-		Desc.TextWrapped = true
-		Desc.TextXAlignment = Enum.TextXAlignment.Left
-		Desc.TextYAlignment = Enum.TextYAlignment.Top
-
-		return Desc
-	end
-
-	if name == "Info" then
-		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.")
-		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.")
-		createCard("Discord Community","https://discord.gg/chloex")
-		createCard("System Info","GUI Bridge Global\nEnum Safe\nModular Tab System\nMobile Friendly")
-
-	elseif name == "Log" then
-		LogLabel = createCard("System Log", VERSION .. "\nWaiting for activity...")
-		pushLog("Log Initialized", "success")
-		pushLog("Loaded: " .. VERSION, "success")
-
-	else
-		createCard(name .. " Tab","Temporary content\nWaiting for features...")
-	end
-end
-
--- Tabs
-local tabs = {"Info","Fishing","Auto","Teleport","Misc","Webhook","Log"}
-for _,name in ipairs(tabs) do
-	createTab(name)
 	createPage(name)
 end
 
+-- CREATE TABS
+createTab("Info")
+createTab("Fishing")
+createTab("Auto")
+createTab("Teleport")
+createTab("Misc")
+createTab("Webhook")
+createTab("Log")
+
+-- INFO CONTENT (REAL QU33N STYLE)
+createCard(Pages.Info, "QU33N UI", "Modular Roblox UI inspired by Chloe X.\nLoader → Main → GUI → Tabs.")
+createCard(Pages.Info, "Fast Fishing", "Optimized for FishIt & Delta Mobile.\nSupports Blatant V1 / V2.")
+createCard(Pages.Info, "Discord Community", "discord.gg/chloex\nTap button in official release.")
+createCard(Pages.Info, "System Info", "Enum Safe\nMobile Friendly\nModular Tabs")
+
+-- FILL OTHER TABS SAME (TEMP)
+for _, name in ipairs({"Fishing","Auto","Teleport","Misc","Webhook"}) do
+	createCard(Pages[name], name.." Module", "Feature placeholder.\nReady for future expansion.")
+end
+
+-- LOG TAB CARD
+local LogCard = Instance.new("Frame", Pages.Log)
+LogCard.Size = UDim2.new(1, -12, 0, 200)
+LogCard.BackgroundColor3 = Theme.Panel
+LogCard.BorderSizePixel = 0
+Instance.new("UICorner", LogCard).CornerRadius = UDim.new(0, 16)
+
+local LogTitle = Instance.new("TextLabel", LogCard)
+LogTitle.Text = "Log — BETA v0.7"
+LogTitle.Font = Enum.Font.GothamBold
+LogTitle.TextSize = 16
+LogTitle.TextColor3 = Theme.Accent
+LogTitle.BackgroundTransparency = 1
+LogTitle.Position = UDim2.new(0, 16, 0, 12)
+LogTitle.Size = UDim2.new(1, -32, 0, 22)
+LogTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+LogLabel = Instance.new("TextLabel", LogCard)
+LogLabel.Position = UDim2.new(0, 16, 0, 42)
+LogLabel.Size = UDim2.new(1, -32, 1, -54)
+LogLabel.BackgroundTransparency = 1
+LogLabel.TextWrapped = true
+LogLabel.TextXAlignment = Enum.TextXAlignment.Left
+LogLabel.TextYAlignment = Enum.TextYAlignment.Top
+LogLabel.Font = Enum.Font.Code
+LogLabel.TextSize = 13
+LogLabel.RichText = true
+LogLabel.Text = ""
+
+-- INIT LOGS
+pushLog("GUI Loaded Successfully", Color3.fromRGB(120,255,120))
+pushLog("System Ready", Color3.fromRGB(200,200,255))
+
+-- DEFAULT TAB
 setActive("Info")
-pushLog("GUI Loaded Successfully", "success")
-notify(VERSION .. " Loaded")
+
+-- GLOBAL BRIDGE
+_G.QU33N = {
+	Pages = Pages,
+	Theme = Theme
+}
