@@ -1,12 +1,13 @@
---// QU33N FULL SINGLE FILE (MOBILE NARROW + AUTO TAB WIDTH + LOG)
+--// QU33N SINGLE FILE — BETA v0.4 (LOG CARD + VERSION TAG)
 
 repeat task.wait() until game:IsLoaded()
 task.wait(0.2)
 
+local VERSION = "QU33N BETA v0.4"
+
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
-local Players = game:GetService("Players")
 
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
@@ -38,9 +39,9 @@ local Theme = {
 -- Responsive Size
 local function responsiveSize()
 	if isMobile then
-		return UDim2.new(0.68,0,0.78,0) -- MOBILE smaller
+		return UDim2.new(0.66,0,0.75,0)
 	else
-		return UDim2.new(0.38,0,0.72,0) -- PC same
+		return UDim2.new(0.38,0,0.72,0)
 	end
 end
 
@@ -61,7 +62,7 @@ Main.BackgroundColor3 = Theme.BG
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
 
--- Drag Window
+-- Drag
 do
 	local dragging, dragStart, startPos
 	Main.InputBegan:Connect(function(i)
@@ -125,7 +126,7 @@ MinBtn.TextColor3 = Theme.Text
 MinBtn.BackgroundColor3 = Theme.Panel
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0,6)
 
--- Minimize logic
+-- Minimize bubble
 local logo = Instance.new("TextButton", ScreenGui)
 logo.Text="⚡"
 logo.Font=Enum.Font.GothamBold
@@ -179,7 +180,7 @@ Pages.BackgroundTransparency = 1
 local pageList = {}
 local tabButtons = {}
 
--- LOG
+-- LOG SYSTEM
 local LogMessages = {}
 local LogLabel
 
@@ -199,7 +200,7 @@ local function setActive(tabName)
 	end
 end
 
--- AUTO WIDTH TAB BUTTON
+-- Tab button (auto width)
 local function createTab(name)
 	local b = Instance.new("TextButton")
 	b.Parent = TabsContainer
@@ -210,7 +211,6 @@ local function createTab(name)
 	b.Font = Enum.Font.Gotham
 	b.TextSize = 12
 	b.TextColor3 = Theme.SubText
-	b.TextWrapped = false
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,12)
 
 	b.MouseButton1Click:Connect(function()
@@ -220,6 +220,7 @@ local function createTab(name)
 	tabButtons[name] = b
 end
 
+-- Page builder
 local function createPage(name)
 	local p = Instance.new("Frame", Pages)
 	p.Size = UDim2.new(1,0,1,0)
@@ -238,29 +239,7 @@ local function createPage(name)
 	local Layout = Instance.new("UIListLayout", Scroll)
 	Layout.Padding = UDim.new(0,14)
 
-	-- LOG TAB
-	if name == "Log" then
-		local Card = Instance.new("Frame", Scroll)
-		Card.Size = UDim2.new(1, -6, 0, 320)
-		Card.BackgroundColor3 = Theme.Panel
-		Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 16)
-
-		LogLabel = Instance.new("TextLabel", Card)
-		LogLabel.Size = UDim2.new(1, -20, 1, -20)
-		LogLabel.Position = UDim2.new(0,10,0,10)
-		LogLabel.BackgroundTransparency = 1
-		LogLabel.TextWrapped = true
-		LogLabel.TextXAlignment = Enum.TextXAlignment.Left
-		LogLabel.TextYAlignment = Enum.TextYAlignment.Top
-		LogLabel.Font = Enum.Font.Gotham
-		LogLabel.TextSize = 12
-		LogLabel.TextColor3 = Theme.SubText
-		LogLabel.Text = "Log Initialized..."
-
-		pushLog("Log system ready")
-		return
-	end
-
+	-- Card Builder
 	local function createCard(titleText, descText, buttonText, callback)
 		local Card = Instance.new("Frame", Scroll)
 		Card.Size = UDim2.new(1, -6, 0, 130)
@@ -284,7 +263,7 @@ local function createPage(name)
 		Desc.TextColor3 = Theme.SubText
 		Desc.BackgroundTransparency = 1
 		Desc.Position = UDim2.new(0, 16, 0, 44)
-		Desc.Size = UDim2.new(1, -32, 0, 44)
+		Desc.Size = UDim2.new(1, -32, 0, 64)
 		Desc.TextWrapped = true
 		Desc.TextXAlignment = Enum.TextXAlignment.Left
 		Desc.TextYAlignment = Enum.TextYAlignment.Top
@@ -306,7 +285,7 @@ local function createPage(name)
 		end
 	end
 
-	-- INFO
+	-- INFO CONTENT (ORIGINAL STYLE)
 	if name == "Info" then
 		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.",nil)
 		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.",nil)
@@ -317,6 +296,18 @@ local function createPage(name)
 			end
 		end)
 		createCard("System Info","GUI Bridge Global\nEnum Safe\nModular Tab System\nMobile Friendly",nil)
+
+	-- LOG TAB
+	elseif name == "Log" then
+		createCard(
+			"System Log",
+			VERSION .. "\n\nWaiting for script activity...",
+			nil
+		)
+		LogLabel = Scroll:GetChildren()[#Scroll:GetChildren()].Desc
+		pushLog("Log Initialized")
+		pushLog("Version Loaded: " .. VERSION)
+
 	else
 		createCard(name .. " Tab","Temporary content\nWaiting for features...",nil)
 	end
@@ -332,4 +323,4 @@ end
 setActive("Info")
 
 pushLog("GUI Loaded Successfully")
-notify("QU33N Loaded — Responsive Mode")
+notify(VERSION .. " Loaded")
