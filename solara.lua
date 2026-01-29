@@ -1,4 +1,4 @@
---// QU33N FULL SINGLE FILE (GUI CORE + INFO + LIVE LOG TAB)
+--// QU33N FULL SINGLE FILE (GUI CORE + INFO + LIVE LOG TAB + MOBILE TAB SCROLL)
 
 repeat task.wait() until game:IsLoaded()
 task.wait(0.2)
@@ -38,7 +38,7 @@ local Theme = {
 -- Responsive
 local function responsiveSize()
 	if UserInputService.TouchEnabled then
-		return UDim2.new(0.75,0,0.80,0)
+		return UDim2.new(0.92,0,0.80,0)
 	else
 		return UDim2.new(0.38,0,0.72,0)
 	end
@@ -182,16 +182,22 @@ end)
 -- Tabs bar
 local TabBar = Instance.new("Frame", Main)
 TabBar.Position = UDim2.new(0,16,0,58)
-TabBar.Size = UDim2.new(1,-32,0,36)
+TabBar.Size = UDim2.new(1,-32,0,40)
 TabBar.BackgroundTransparency = 1
 
-local TabsContainer = Instance.new("Frame", TabBar)
+-- SCROLLABLE TAB CONTAINER
+local TabsContainer = Instance.new("ScrollingFrame", TabBar)
 TabsContainer.Size = UDim2.new(1,0,1,0)
+TabsContainer.CanvasSize = UDim2.new(0,0,0,0)
+TabsContainer.AutomaticCanvasSize = Enum.AutomaticSize.X
+TabsContainer.ScrollingDirection = Enum.ScrollingDirection.X
+TabsContainer.ScrollBarThickness = 0
 TabsContainer.BackgroundTransparency = 1
+TabsContainer.BorderSizePixel = 0
 
 local TabLayout = Instance.new("UIListLayout", TabsContainer)
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.Padding = UDim.new(0,3)
+TabLayout.Padding = UDim.new(0,6)
 
 -- Pages
 local Pages = Instance.new("Frame", Main)
@@ -257,7 +263,7 @@ end
 local function createTab(name)
 	local b = Instance.new("TextButton")
 	b.Parent = TabsContainer
-	b.Size = UDim2.new(0,90,1,0)
+	b.Size = UDim2.new(0,110,1,0)
 	b.BackgroundColor3 = Theme.Panel
 	b.Text = name
 	b.Font = Enum.Font.Gotham
@@ -344,37 +350,17 @@ local function createPage(name)
 
 	-- INFO TAB ORIGINAL CONTENT
 	if name == "Info" then
-		createCard(
-			"QU33N UI",
-			"QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.",
-			nil
-		)
-
-		createCard(
-			"Fast Fishing",
-			"Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.",
-			nil
-		)
-
-		createCard(
-			"Discord Community",
-			"Gabung Discord untuk update dan support.",
-			"COPY DISCORD",
-			function()
-				if setclipboard then
-					setclipboard("https://discord.gg/chloex")
-					pushLog("Copied Discord Invite")
-				end
+		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.",nil)
+		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.",nil)
+		createCard("Discord Community","Gabung Discord untuk update dan support.","COPY DISCORD",function()
+			if setclipboard then
+				setclipboard("https://discord.gg/chloex")
+				pushLog("Copied Discord Invite")
 			end
-		)
-
-		createCard(
-			"System Info",
-			"GUI Bridge Global\nEnum Safe\nModular Tab System\nMobile Friendly",
-			nil
-		)
+		end)
+		createCard("System Info","GUI Bridge Global\nEnum Safe\nModular Tab System\nMobile Friendly",nil)
 	else
-		createCard(name .. " Tab", "Temporary content\nWaiting for features...", nil)
+		createCard(name .. " Tab","Temporary content\nWaiting for features...",nil)
 	end
 end
 
@@ -396,4 +382,4 @@ warn = function(...)
 end
 
 pushLog("GUI Loaded Successfully")
-notify("QU33N Loaded — Single File Mode")
+notify("QU33N Loaded — Mobile Ready")
