@@ -293,70 +293,64 @@ for name,page in pairs(pageList) do
     end
 end
 
--- LOG TAB UI
+-- LOG TAB UI (SCROLL FIXED)
 do
     local page = pageList.Log
 
-    local Card = Instance.new("Frame", page)
-    Card.Size = UDim2.new(1,-6,1,-6)
-    Card.BackgroundColor3 = Theme.Panel
-    Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.CanvasSize = UDim2.new(0,0,0,0)
+    page.ScrollBarThickness = 4
 
-    local Title = Instance.new("TextLabel", Card)
+    local layout = Instance.new("UIListLayout", page)
+    layout.Padding = UDim.new(0,8)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+    -- Header Card
+    local HeaderCard = Instance.new("Frame", page)
+    HeaderCard.Size = UDim2.new(1,-6,0,48)
+    HeaderCard.BackgroundColor3 = Theme.Panel
+    Instance.new("UICorner", HeaderCard).CornerRadius = UDim.new(0,16)
+
+    local Title = Instance.new("TextLabel", HeaderCard)
     Title.Text = "Log Console — "..VERSION
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 15
     Title.TextColor3 = Theme.Accent
     Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0,12,0,8)
-    Title.Size = UDim2.new(1,-20,0,28)
+    Title.Size = UDim2.new(1,-24,1,0)
+    Title.Position = UDim2.new(0,12,0,0)
     Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextYAlignment = Enum.TextYAlignment.Center
 
-    -- Scroll container
-    local LogScroll = Instance.new("ScrollingFrame", Card)
-    LogScroll.Position = UDim2.new(0,12,0,42)
-    LogScroll.Size = UDim2.new(1,-24,1,-54)
-    LogScroll.CanvasSize = UDim2.new(0,0,0,0)
-    LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    LogScroll.ScrollBarThickness = 4
-    LogScroll.BackgroundTransparency = 1
-    LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
-
-    local layout = Instance.new("UIListLayout", LogScroll)
-    layout.Padding = UDim.new(0,6)
-
-    local function addLog(label, color)
-        local txt = Instance.new("TextLabel", LogScroll)
-        txt.Size = UDim2.new(1,-6,0,18)
-        txt.AutomaticSize = Enum.AutomaticSize.Y
-        txt.BackgroundTransparency = 1
-        txt.TextWrapped = true
-        txt.TextXAlignment = Enum.TextXAlignment.Left
-        txt.TextYAlignment = Enum.TextYAlignment.Top
-        txt.Font = Enum.Font.Code
-        txt.TextSize = 13
-        txt.TextColor3 = color
-        txt.Text = label
-
-        task.wait()
-        LogScroll.CanvasPosition = Vector2.new(0, math.max(0,
-            LogScroll.CanvasSize.Y.Offset - LogScroll.AbsoluteWindowSize.Y))
+    -- Log items container
+    local function addLog(text, color)
+        local lbl = Instance.new("TextLabel", page)
+        lbl.Size = UDim2.new(1,-20,0,18)
+        lbl.AutomaticSize = Enum.AutomaticSize.Y
+        lbl.BackgroundTransparency = 1
+        lbl.TextWrapped = true
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.TextYAlignment = Enum.TextYAlignment.Top
+        lbl.Font = Enum.Font.Code
+        lbl.TextSize = 13
+        lbl.TextColor3 = color or Theme.Text
+        lbl.Text = text
     end
 
-    -- expose logger
-    _G.QU33N_Log = {
-        Info = function(msg)
-            addLog("Info: "..msg, Color3.fromRGB(160,200,255))
-        end,
-        Warning = function(msg)
-            addLog("Warning: "..msg, Color3.fromRGB(255,200,120))
-        end,
-        Error = function(msg)
-            addLog("Error: "..msg, Color3.fromRGB(255,120,120))
+    -- Hook log buffer
+    task.spawn(function()
+        local last = 0
+        while true do
+            if #Logs > last then
+                for i = last+1, #Logs do
+                    addLog(Logs[i].text, Logs[i].color)
+                end
+                last = #Logs
+            end
+            task.wait(0.1)
         end
-    }
+    end)
 end
-
 -- Init
 setActive("Info")
 pushLog("GUI Loaded Successfully", Color3.fromRGB(120,255,160))
