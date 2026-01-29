@@ -4,6 +4,12 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(0.25)
 
+if _G.__QU33N_REMOTE_HOOK then
+    return
+end
+_G.__QU33N_REMOTE_HOOK = true
+
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
@@ -196,19 +202,23 @@ local function pushLog(text,color)
     table.insert(Logs,{text=text,color=color or Theme.Text})
 end
 
---// Remote Call Logger (Client -> Server)
+--// Remote Call Logger (SAFE)
 local mt = getrawmetatable(game)
 local old = mt.__namecall
 setreadonly(mt,false)
 
 mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
+    -- cegah recursive hook
+    if checkcaller() then
+        return old(self, ...)
+    end
 
-    if typeof(self) == "Instance" and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
-        if method == "FireServer" then
+    local method = getnamecallmethod()
+
+    if typeof(self) == "Instance" then
+        if self:IsA("RemoteEvent") and method == "FireServer" then
             pushLog("[SEND] "..self.Name, Color3.fromRGB(120,180,255))
-        elseif method == "InvokeServer" then
+        elseif self:IsA("RemoteFunction") and method == "InvokeServer" then
             pushLog("[SEND] "..self.Name.." (Invoke)", Color3.fromRGB(120,180,255))
         end
     end
@@ -217,6 +227,7 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 
 setreadonly(mt,true)
+
 
 -- v5 Tab Engine
 local function setActive(tabName)
