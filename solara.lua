@@ -1,9 +1,9 @@
---// QU33N SINGLE FILE — BETA v0.5 (MOBILE TABS FIX)
+--// QU33N SINGLE FILE — BETA v0.4 (LOG CARD + VERSION TAG)
 
 repeat task.wait() until game:IsLoaded()
 task.wait(0.2)
 
-local VERSION = "QU33N BETA v0.5"
+local VERSION = "QU33N BETA v0.4"
 
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
@@ -36,7 +36,7 @@ local Theme = {
 	Accent = Color3.fromRGB(79,139,255)
 }
 
--- Responsive Size (UNCHANGED)
+-- Responsive Size
 local function responsiveSize()
 	if isMobile then
 		return UDim2.new(0.66,0,0.75,0)
@@ -62,7 +62,7 @@ Main.BackgroundColor3 = Theme.BG
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
 
--- Drag Window
+-- Drag
 do
 	local dragging, dragStart, startPos
 	Main.InputBegan:Connect(function(i)
@@ -153,29 +153,23 @@ CloseBtn.MouseButton1Click:Connect(function()
 	Main:Destroy()
 end)
 
--- Tabs Bar
-llocal TabBar = Instance.new("ScrollingFrame", Main)
+-- Tabs bar
+local TabBar = Instance.new("Frame", Main)
 TabBar.Position = UDim2.new(0,16,0,58)
-TabBar.Size = UDim2.new(1,-32,0,36)
-TabBar.AutomaticCanvasSize = Enum.AutomaticSize.None
-TabBar.CanvasSize = UDim2.new(0,0,0,0)
-TabBar.ScrollingDirection = Enum.ScrollingDirection.X
-TabBar.ScrollBarThickness = 3
+TabBar.Size = UDim2.new(1,-32,0,40)
 TabBar.BackgroundTransparency = 1
-TabBar.BorderSizePixel = 0
 
-local TabsContainer = Instance.new("Frame", TabBar)
-TabsContainer.Size = UDim2.new(0,0,1,0)
+local TabsContainer = Instance.new("ScrollingFrame", TabBar)
+TabsContainer.Size = UDim2.new(1,0,1,0)
+TabsContainer.AutomaticCanvasSize = Enum.AutomaticSize.X
+TabsContainer.ScrollingDirection = Enum.ScrollingDirection.X
+TabsContainer.ScrollBarThickness = 0
 TabsContainer.BackgroundTransparency = 1
+TabsContainer.BorderSizePixel = 0
 
 local TabLayout = Instance.new("UIListLayout", TabsContainer)
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.Padding = UDim.new(0,3)
-
-TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    TabsContainer.Size = UDim2.new(0, TabLayout.AbsoluteContentSize.X, 1, 0)
-    TabBar.CanvasSize = UDim2.new(0, TabsContainer.Size.X.Offset, 0, 0)
-end)
+TabLayout.Padding = UDim.new(0,6)
 
 -- Pages
 local Pages = Instance.new("Frame", Main)
@@ -206,21 +200,17 @@ local function setActive(tabName)
 	end
 end
 
--- Create Tab Button (MOBILE SHRINK)
+-- Tab button (auto width)
 local function createTab(name)
 	local b = Instance.new("TextButton")
 	b.Parent = TabsContainer
-
 	b.AutomaticSize = Enum.AutomaticSize.X
-	b.Size = UDim2.new(0, isMobile and 48 or 70, 1, 0)
-
+	b.Size = UDim2.new(0,60,1,0)
 	b.BackgroundColor3 = Theme.Panel
-	b.Text = " "..name.." "
+	b.Text = "  "..name.."  "
 	b.Font = Enum.Font.Gotham
-	b.TextSize = isMobile and 11 or 12
+	b.TextSize = 12
 	b.TextColor3 = Theme.SubText
-	b.BorderSizePixel = 0
-
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,12)
 
 	b.MouseButton1Click:Connect(function()
@@ -230,7 +220,7 @@ local function createTab(name)
 	tabButtons[name] = b
 end
 
--- Create Page
+-- Page builder
 local function createPage(name)
 	local p = Instance.new("Frame", Pages)
 	p.Size = UDim2.new(1,0,1,0)
@@ -267,7 +257,6 @@ local function createPage(name)
 		Title.TextXAlignment = Enum.TextXAlignment.Left
 
 		local Desc = Instance.new("TextLabel", Card)
-		Desc.Name = "Desc"
 		Desc.Text = descText
 		Desc.Font = Enum.Font.Gotham
 		Desc.TextSize = 13
@@ -294,11 +283,9 @@ local function createPage(name)
 
 			if callback then Btn.MouseButton1Click:Connect(callback) end
 		end
-
-		return Desc
 	end
 
-	-- INFO TAB (REAL TEXT)
+	-- INFO CONTENT (ORIGINAL STYLE)
 	if name == "Info" then
 		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.",nil)
 		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.",nil)
@@ -312,13 +299,14 @@ local function createPage(name)
 
 	-- LOG TAB
 	elseif name == "Log" then
-		LogLabel = createCard(
+		createCard(
 			"System Log",
 			VERSION .. "\n\nWaiting for script activity...",
 			nil
 		)
+		LogLabel = Scroll:GetChildren()[#Scroll:GetChildren()].Desc
 		pushLog("Log Initialized")
-		pushLog("Loaded: " .. VERSION)
+		pushLog("Version Loaded: " .. VERSION)
 
 	else
 		createCard(name .. " Tab","Temporary content\nWaiting for features...",nil)
