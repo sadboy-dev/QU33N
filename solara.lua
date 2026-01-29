@@ -195,70 +195,133 @@ Pages.BackgroundTransparency = 1
 
 local pageList = {}
 local tabButtons = {}
-
--- Log buffer
+-- LOG BUFFER
 local Logs = {}
-local function pushLog(text,color)
-    table.insert(Logs,{text=text,color=color or Theme.Text})
-end
-
 local RemoteBlacklist = {
     FishCaughtVisual = true,
 }
-local RemoteThrottle = {}
-local THROTTLE_TIME = 0.25 -- detik
 
-local PendingRemotes = {} -- [RemoteName] = {time=number, index=number}
-local PAIR_TIMEOUT = 3 -- detik
+--==============================
+-- REMOTE LOG ENGINE (SAFE)
+--==============================
 
-local mt = getrawmetatable(game)
-local old = mt.__namecall
-setreadonly(mt,false)
+local RS = game:GetService("ReplicatedStorage")
 
-mt.__namecall = newcclosure(function(self, ...)
-    if checkcaller() then
-        return old(self, ...)
+local PendingRemotes = {} -- [remoteName] = {time,index}
+local MAX_LOG = 300
+local PAIR_TIMEOUT = 3
+
+
+-- safe push log with limit
+local function pushLog(text, color)
+    table.insert(Logs, {
+        text = text,
+        color = color or Theme.Text
+    })
+    if #Logs > MAX_LOG then
+        table.remove(Logs, 1)
+    end
+end
+
+--==============================
+-- SEND HOOK (Fire / Invoke)
+--==============================
+local rawmt = getrawmetatable(game)
+local old = rawmt.__namecall
+setreadonly(rawmt,false)
+
+rawmt.__namecall = newcclosure(function(self,...)
+    local method = getnamecallmethod()
+    if self and self.Name and RemoteBlacklist[self.Name] then
+    	return old(self, ...)
+	end
+
+
+
+    if self and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+        if method == "FireServer" or method == "InvokeServer" then
+            local idx = #Logs + 1
+			PendingRemotes[self] = {
+    			time = tick(),
+    			index = idx
+			}
+
+			pushLog(
+    			"[SEND] "..self.Name.." → waiting",
+    			Color3.fromRGB(120,180,255)
+			)
+
+        end
     end
 
-    if typeof(self) == "Instance" then
-        local name = self.Name
-        local method = getnamecallmethod()
-
-        -- blacklist hard
-        if RemoteBlacklist[name] then
-            return old(self, ...)
-        end
-
-        -- throttle
-        local now = tick()
-        if RemoteThrottle[name] and (now - RemoteThrottle[name] < THROTTLE_TIME) then
-            return old(self, ...)
-        end
-        RemoteThrottle[name] = now
-
-        if self:IsA("RemoteEvent") and method == "FireServer" then
-            local idx = #Logs + 1
-            PendingRemotes[self.Name] = {
-            time = tick(),
-            index = idx
-            }
-            pushLog("[SEND] "..self.Name.." → waiting...", Color3.fromRGB(120,180,255))
-
-        elseif self:IsA("RemoteFunction") and method == "InvokeServer" then
-            local idx = #Logs + 1
-            PendingRemotes[self.Name] = {
-                time = tick(),
-                index = idx
-            }
-            pushLog("[SEND] "..self.Name.." (Invoke) → waiting...", Color3.fromRGB(120,180,255))
-        end
-
-    end
-
-    return old(self, ...)
+    return old(self,...)
 end)
 
-setreadonly(mt,true)
+setreadonly(rawmt,true)
+
+--==============================
+-- RECEIVE HOOK (SAFE & LIGHT)
+--==============================
+local function hookRemote(remote)
+    if RemoteBlacklist[remote.Name] then
+        return
+    end
+	
+
+
+    if remote:IsA("RemoteEvent") then
+        remote.OnClientEvent:Connect(function(...)
+            local pending = PendingRemotes[remote]
+			
+            if pending then
+                local dt = (tick() - pending.time) * 1000
+                Logs[pending.index].text =
+                    "[SEND→RECV] "..remote.Name..
+                    string.format(" (%.1f ms)", dt)
+                Logs[pending.index].color =
+                    Color3.fromRGB(120,255,160)
+                PendingRemotes[remote] = nil
+            else
+                pushLog(
+                    "[RECV] "..remote.Name,
+                    Color3.fromRGB(120,255,160)
+                )
+            end
+        end)
+    end
+end
+
+-- hook existing remotes
+for _,obj in ipairs(RS:GetDescendants()) do
+    hookRemote(obj)
+end
+
+-- hook remotes that appear later
+RS.DescendantAdded:Connect(function(obj)
+    hookRemote(obj)
+end)
+
+--==============================
+-- TIMEOUT CLEANER
+--==============================
+
+task.spawn(function()
+    while true do
+        local now = tick()
+        for remote,data in pairs(PendingRemotes) do
+    		if now - data.time > PAIR_TIMEOUT then
+        		Logs[data.index].text =
+            		"[SEND→NO RECV] "..remote.Name
+        		Logs[data.index].color =
+            		Color3.fromRGB(255,180,120)
+        		PendingRemotes[remote] = nil
+    		end
+		end
+
+        task.wait(0.5)
+    end
+end)
+
 
 
 
