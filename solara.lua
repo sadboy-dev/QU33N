@@ -13,6 +13,17 @@ local LocalPlayer = Players.LocalPlayer
 local isMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled
 local VERSION = "BETA v1.2"
 
+-- Notify
+local function notify(text)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = "QU33N",
+			Text = text,
+			Duration = 3
+		})
+	end)
+end
+
 -- Destroy old
 if CoreGui:FindFirstChild("QU33N") then
     CoreGui.QU33N:Destroy()
@@ -175,7 +186,6 @@ local pageList = {}
 local LogMessages = {}
 local LogLabel
 
-
 local function pushLog(text)
 	local msg = os.date("[%H:%M:%S] ") .. tostring(text)
 	table.insert(LogMessages, msg)
@@ -190,7 +200,7 @@ local function setActive(name)
         btn.TextColor3 = (tab == name) and Theme.Accent or Theme.SubText
         pageList[tab].Visible = (tab == name)
     end
-    pushLog("INFO", "Open "..name, Color3.fromRGB(150,200,255))
+    pushLog("Open Tab: " .. tabName)
 end
 
 local function createTab(name)
@@ -240,51 +250,69 @@ for _,name in ipairs(tabNames) do
     createScrollPage(name)
 end
 
--- CARD BUILDER (AUTO HEIGHT)
-local function createCard(parent,title,desc)
-    local Card = Instance.new("Frame", parent)
-    Card.Size = UDim2.new(1,-6,0,10)
-    Card.BackgroundColor3 = Theme.Panel
-    Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
+-- CARD BUILDER
+local function createCard(titleText, descText, buttonText, callback)
+		local Card = Instance.new("Frame", Scroll)
+		Card.Size = UDim2.new(1, -6, 0, 130)
+		Card.BackgroundColor3 = Theme.Panel
+		Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 16)
 
-    local Title = Instance.new("TextLabel", Card)
-    Title.Text = title
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 16
-    Title.TextColor3 = Theme.Accent
-    Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0,16,0,14)
-    Title.Size = UDim2.new(1,-32,0,22)
-    Title.TextXAlignment = Enum.TextXAlignment.Left
+		local Title = Instance.new("TextLabel", Card)
+		Title.Text = titleText
+		Title.Font = Enum.Font.GothamBold
+		Title.TextSize = 16
+		Title.TextColor3 = Theme.Accent
+		Title.BackgroundTransparency = 1
+		Title.Position = UDim2.new(0, 16, 0, 14)
+		Title.Size = UDim2.new(1, -32, 0, 22)
+		Title.TextXAlignment = Enum.TextXAlignment.Left
 
-    local Desc = Instance.new("TextLabel", Card)
-    Desc.Text = desc
-    Desc.Font = Enum.Font.Gotham
-    Desc.TextSize = 13
-    Desc.TextColor3 = Theme.SubText
-    Desc.BackgroundTransparency = 1
-    Desc.Position = UDim2.new(0,16,0,44)
-    Desc.Size = UDim2.new(1,-32,0,0)
-    Desc.TextWrapped = true
-    Desc.TextYAlignment = Enum.TextYAlignment.Top
-    Desc.AutomaticSize = Enum.AutomaticSize.Y
+		local Desc = Instance.new("TextLabel", Card)
+		Desc.Name = "Desc"
+		Desc.Text = descText
+		Desc.Font = Enum.Font.Gotham
+		Desc.TextSize = 13
+		Desc.TextColor3 = Theme.SubText
+		Desc.BackgroundTransparency = 1
+		Desc.Position = UDim2.new(0, 16, 0, 44)
+		Desc.Size = UDim2.new(1, -32, 0, 64)
+		Desc.TextWrapped = true
+		Desc.TextXAlignment = Enum.TextXAlignment.Left
+		Desc.TextYAlignment = Enum.TextYAlignment.Top
 
-    RunService.Heartbeat:Wait()
-    Card.Size = UDim2.new(1,-6,0, Desc.AbsoluteSize.Y + 70)
-end
+		if buttonText then
+			local Btn = Instance.new("TextButton")
+			Btn.Parent = Card
+			Btn.Size = UDim2.new(1, -32, 0, 34)
+			Btn.Position = UDim2.new(0, 16, 1, -46)
+			Btn.BackgroundColor3 = Theme.BG
+			Btn.BorderSizePixel = 0
+			Btn.Text = buttonText
+			Btn.Font = Enum.Font.GothamBold
+			Btn.TextSize = 13
+			Btn.TextColor3 = Theme.Text
+			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 12)
 
--- Fill Tabs Content (TEMP SAME)
-for name,page in pairs(pageList) do
-    if name ~= "Log" then
-        createCard(page,"QU33N UI","Temporary content for "..name.." tab.")
-        createCard(page,"System","Scroll works. Layout locked.")
-        createCard(page,"Ready","Features will be injected.")
-    end
-end
+			if callback then Btn.MouseButton1Click:Connect(callback) end
+		end
 
--- LOG TAB UI (SCROLLABLE)
-do
-    LogLabel = createCard(
+		return Desc
+	end
+
+    if name == "Info" then
+		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.",nil)
+		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.",nil)
+		createCard("Discord Community","Gabung Discord untuk update dan support.","COPY DISCORD",function()
+			if setclipboard then
+				setclipboard("https://discord.gg/chloex")
+				pushLog("Copied Discord Invite")
+			end
+		end)
+		createCard("System Info","GUI Bridge Global\nEnum Safe\nModular Tab System\nMobile Friendly",nil)
+
+	-- LOG TAB
+	elseif name == "Log" then
+		LogLabel = createCard(
 			"System Log",
 			VERSION .. "\n\nWaiting for script activity...",
 			nil
@@ -297,10 +325,11 @@ do
 	end
 end
 
+
 -- INIT
 setActive("Info")
-pushLog("INFO","GUI Loaded Successfully", Color3.fromRGB(120,255,160))
-
+pushLog("GUI Loaded Successfully")
+notify(VERSION .. " Loaded")
 _G.QU33N = {
     Main = Main,
     Tabs = tabButtons,
