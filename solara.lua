@@ -293,39 +293,46 @@ for name,page in pairs(pageList) do
     end
 end
 
--- LOG TAB UI (SCROLL FIXED)
+-- LOG TAB UI (CARD + TIGHT SPACING)
 do
     local page = pageList.Log
 
-    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    page.CanvasSize = UDim2.new(0,0,0,0)
-    page.ScrollBarThickness = 4
+    -- Card container
+    local Card = Instance.new("Frame", page)
+    Card.Size = UDim2.new(1,-6,0,260)
+    Card.BackgroundColor3 = Theme.Panel
+    Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
 
-    local layout = Instance.new("UIListLayout", page)
-    layout.Padding = UDim.new(0,8)
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-    -- Header Card
-    local HeaderCard = Instance.new("Frame", page)
-    HeaderCard.Size = UDim2.new(1,-6,0,48)
-    HeaderCard.BackgroundColor3 = Theme.Panel
-    Instance.new("UICorner", HeaderCard).CornerRadius = UDim.new(0,16)
-
-    local Title = Instance.new("TextLabel", HeaderCard)
+    -- Title
+    local Title = Instance.new("TextLabel", Card)
     Title.Text = "Log Console — "..VERSION
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 15
     Title.TextColor3 = Theme.Accent
     Title.BackgroundTransparency = 1
-    Title.Size = UDim2.new(1,-24,1,0)
-    Title.Position = UDim2.new(0,12,0,0)
+    Title.Position = UDim2.new(0,12,0,8)
+    Title.Size = UDim2.new(1,-24,0,28)
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.TextYAlignment = Enum.TextYAlignment.Center
 
-    -- Log items container
+    -- Scroll INSIDE card
+    local LogScroll = Instance.new("ScrollingFrame", Card)
+    LogScroll.Position = UDim2.new(0,12,0,42)
+    LogScroll.Size = UDim2.new(1,-24,1,-52)
+    LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    LogScroll.ScrollBarThickness = 3
+    LogScroll.CanvasSize = UDim2.new(0,0,0,0)
+    LogScroll.BackgroundTransparency = 1
+    LogScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+
+    local layout = Instance.new("UIListLayout", LogScroll)
+    layout.Padding = UDim.new(0,2) -- 🔥 RAPAT seperti console
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+
+    -- Add log line
     local function addLog(text, color)
-        local lbl = Instance.new("TextLabel", page)
-        lbl.Size = UDim2.new(1,-20,0,18)
+        local lbl = Instance.new("TextLabel", LogScroll)
+        lbl.Size = UDim2.new(1,0,0,16)
         lbl.AutomaticSize = Enum.AutomaticSize.Y
         lbl.BackgroundTransparency = 1
         lbl.TextWrapped = true
@@ -337,7 +344,7 @@ do
         lbl.Text = text
     end
 
-    -- Hook log buffer
+    -- Sync log buffer
     task.spawn(function()
         local last = 0
         while true do
@@ -351,6 +358,7 @@ do
         end
     end)
 end
+
 -- Init
 setActive("Info")
 pushLog("GUI Loaded Successfully", Color3.fromRGB(120,255,160))
