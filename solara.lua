@@ -394,10 +394,12 @@ do
                     out[i] = safeToString(v)
                 end
 
-                -- FILTER: skip Remotes.Set dengan args "Time"
+                -- FILTER: skip Remotes.Set jika args mengandung "Time"
                 if self.Name == "Set" and self.Parent and self.Parent.Name == "Remotes" then
-                    if #out == 1 and out[1] == "Time" then
-                        return oldNamecall(self, ...)
+                    for _,v in ipairs(out) do
+                        if tostring(v) == "Time" then
+                            return oldNamecall(self, ...) -- jalankan tapi skip log
+                        end
                     end
                 end
 
@@ -418,10 +420,12 @@ do
                         out[i] = safeToString(v)
                     end
 
-                    -- FILTER Receive Remotes.Set Time
+                    -- FILTER Receive Remotes.Set jika args mengandung "Time"
                     if remote.Name == "Set" and remote.Parent and remote.Parent.Name == "Remotes" then
-                        if #out == 1 and out[1] == "Time" then
-                            return
+                        for _,v in ipairs(out) do
+                            if tostring(v) == "Time" then
+                                return -- skip log
+                            end
                         end
                     end
 
