@@ -1,5 +1,5 @@
 --// QU33N UI — TRUE v5 ENGINE LOCKED
---// BETA v1.0 — Text Align Fix + All Tabs Scroll Enabled
+--// BETA v1.1 — Log Scroll + Prefix Format + Size Lock
 
 repeat task.wait() until game:IsLoaded()
 task.wait(0.25)
@@ -12,18 +12,7 @@ local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-local VERSION = "BETA v1.0"
-
--- Notify
-local function notify(text)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "QU33N",
-            Text = text,
-            Duration = 3
-        })
-    end)
-end
+local VERSION = "BETA v1.1"
 
 -- Cleanup
 if CoreGui:FindFirstChild("QU33N") then
@@ -39,13 +28,12 @@ local Theme = {
     Accent = Color3.fromRGB(79,139,255)
 }
 
--- Responsive size
+-- Size LOCKED
+local GUI_SIZE_PC = UDim2.new(0.30,0,0.72,0)
+local GUI_SIZE_MOBILE = UDim2.new(0.62,0,0.78,0)
+
 local function responsiveSize()
-    if isMobile then
-        return UDim2.new(0.62,0,0.78,0)
-    else
-        return UDim2.new(0.30,0,0.72,0)
-    end
+    return isMobile and GUI_SIZE_MOBILE or GUI_SIZE_PC
 end
 
 -- ScreenGui
@@ -55,7 +43,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = CoreGui
 
--- Main Frame
+-- Main
 local Main = Instance.new("Frame", ScreenGui)
 Main.AnchorPoint = Vector2.new(0.5,0.5)
 Main.Position = UDim2.new(0.5,0,0.52,0)
@@ -64,7 +52,7 @@ Main.BackgroundColor3 = Theme.BG
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,18)
 
--- Drag v5
+-- Drag LOCKED v5
 do
     local dragging, dragStart, startPos
     Main.InputBegan:Connect(function(i)
@@ -104,7 +92,6 @@ Title.TextColor3 = Theme.Text
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1,0,1,0)
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextYAlignment = Enum.TextYAlignment.Center
 
 -- Buttons
 local btnContainer = Instance.new("Frame", Header)
@@ -131,7 +118,7 @@ CloseBtn.TextColor3 = Theme.Text
 CloseBtn.BackgroundColor3 = Theme.Panel
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0,6)
 
--- Logo
+-- Minimize Bubble
 local logo = Instance.new("TextButton", ScreenGui)
 logo.Text="⚡"
 logo.Font=Enum.Font.GothamBold
@@ -158,11 +145,11 @@ CloseBtn.MouseButton1Click:Connect(function()
     Main:Destroy()
 end)
 
--- TAB BAR (horizontal scroll, v5 width)
+-- TAB BAR — HORIZONTAL SCROLL LOCKED
 local TabBar = Instance.new("ScrollingFrame", Main)
 TabBar.Position = UDim2.new(0,16,0,58)
 TabBar.Size = UDim2.new(1,-32,0,36)
-TabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+TabBar.AutomaticCanvasSize = Enum.AutomaticSize.None
 TabBar.CanvasSize = UDim2.new(0,0,0,0)
 TabBar.ScrollingDirection = Enum.ScrollingDirection.X
 TabBar.ScrollBarThickness = 3
@@ -179,6 +166,7 @@ TabLayout.Padding = UDim.new(0,3)
 
 TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TabsContainer.Size = UDim2.new(0, TabLayout.AbsoluteContentSize.X, 1, 0)
+    TabBar.CanvasSize = UDim2.new(0, TabsContainer.Size.X.Offset, 0, 0)
 end)
 
 -- Pages
@@ -190,25 +178,29 @@ Pages.BackgroundTransparency = 1
 local pageList = {}
 local tabButtons = {}
 
--- Log buffer
+-- LOG BUFFER
 local Logs = {}
-local function pushLog(text,color)
-    table.insert(Logs,{text=text,color=color or Theme.Text})
+
+local function pushLog(prefix,text,color)
+    table.insert(Logs,{
+        text = prefix..": "..text,
+        color = color or Theme.Text
+    })
 end
 
--- v5 Tab Engine
+-- TAB ENGINE v5
 local function setActive(tabName)
     for name,btn in pairs(tabButtons) do
         btn.TextColor3 = (name == tabName) and Theme.Accent or Theme.SubText
         pageList[name].Visible = (name == tabName)
     end
-    pushLog("Open Tab: "..tabName, Color3.fromRGB(160,200,255))
+    pushLog("INFO","Open "..tabName, Color3.fromRGB(140,190,255))
 end
 
 local function createTab(name)
     local b = Instance.new("TextButton")
     b.Parent = TabsContainer
-    b.Size = UDim2.new(0,70,1,0) -- v5 locked
+    b.Size = UDim2.new(0,70,1,0)
     b.BackgroundColor3 = Theme.Panel
     b.Text = name
     b.Font = Enum.Font.Gotham
@@ -246,7 +238,7 @@ local function createScrollPage(name)
     pageList[name] = scroll
 end
 
--- Tabs list
+-- Create Tabs
 local tabs = {"Info","Fishing","Auto","Teleport","Misc","Webhook","Log"}
 for _,name in ipairs(tabs) do
     createTab(name)
@@ -269,7 +261,6 @@ local function createCard(parent,title,desc)
     Title.Position = UDim2.new(0,16,0,14)
     Title.Size = UDim2.new(1,-32,0,22)
     Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextYAlignment = Enum.TextYAlignment.Center
 
     local Desc = Instance.new("TextLabel", Card)
     Desc.Text = desc
@@ -284,21 +275,21 @@ local function createCard(parent,title,desc)
     Desc.TextYAlignment = Enum.TextYAlignment.Top
 end
 
--- Fill ALL tabs like Info (temp)
+-- Fill all tabs except Log
 for name,page in pairs(pageList) do
     if name ~= "Log" then
-        createCard(page,"QU33N UI","Temporary content placeholder for "..name.." tab.")
-        createCard(page,"Fast Fishing","Feature system will be added later.")
-        createCard(page,"System","Tab active & scroll working.")
+        createCard(page,"QU33N UI","Temporary placeholder for "..name.." tab.")
+        createCard(page,"System","Scroll enabled & layout locked.")
+        createCard(page,"Ready","Waiting feature injection.")
     end
 end
 
--- LOG TAB UI
+-- LOG TAB (Scrollable)
 do
     local page = pageList.Log
 
     local Card = Instance.new("Frame", page)
-    Card.Size = UDim2.new(1,-6,1,-6)
+    Card.Size = UDim2.new(1,-6,0,400)
     Card.BackgroundColor3 = Theme.Panel
     Instance.new("UICorner", Card).CornerRadius = UDim.new(0,16)
 
@@ -312,31 +303,45 @@ do
     Title.Size = UDim2.new(1,-20,0,28)
     Title.TextXAlignment = Enum.TextXAlignment.Left
 
-    local LogLabel = Instance.new("TextLabel", Card)
-    LogLabel.Position = UDim2.new(0,12,0,42)
-    LogLabel.Size = UDim2.new(1,-24,1,-52)
-    LogLabel.BackgroundTransparency = 1
-    LogLabel.TextWrapped = true
-    LogLabel.TextYAlignment = Enum.TextYAlignment.Top
-    LogLabel.TextXAlignment = Enum.TextXAlignment.Left
-    LogLabel.Font = Enum.Font.Code
-    LogLabel.TextSize = 13
-    LogLabel.RichText = true
+    local LogScroll = Instance.new("ScrollingFrame", Card)
+    LogScroll.Position = UDim2.new(0,12,0,42)
+    LogScroll.Size = UDim2.new(1,-24,1,-52)
+    LogScroll.CanvasSize = UDim2.new(0,0,0,0)
+    LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    LogScroll.ScrollBarThickness = 3
+    LogScroll.BackgroundTransparency = 1
+
+    local Layout = Instance.new("UIListLayout", LogScroll)
+    Layout.Padding = UDim.new(0,6)
 
     RunService.Heartbeat:Connect(function()
-        local rich = ""
+        LogScroll:ClearAllChildren()
+        Layout.Parent = LogScroll
+
         for _,log in ipairs(Logs) do
-            rich ..= string.format('<font color="rgb(%d,%d,%d)">%s</font>\n',
-                log.color.R*255, log.color.G*255, log.color.B*255, log.text)
+            local lbl = Instance.new("TextLabel", LogScroll)
+            lbl.Size = UDim2.new(1,0,0,20)
+            lbl.BackgroundTransparency = 1
+            lbl.Font = Enum.Font.Code
+            lbl.TextSize = 13
+            lbl.TextWrapped = true
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextYAlignment = Enum.TextYAlignment.Top
+            lbl.TextColor3 = log.color
+            lbl.Text = log.text
         end
-        LogLabel.Text = rich
     end)
 end
 
 -- Init
 setActive("Info")
-pushLog("GUI Loaded Successfully", Color3.fromRGB(120,255,160))
-notify("QU33N Loaded — "..VERSION)
+pushLog("INFO","GUI Loaded Successfully", Color3.fromRGB(120,255,160))
+
+StarterGui:SetCore("SendNotification", {
+    Title = "QU33N",
+    Text = "Loaded "..VERSION,
+    Duration = 3
+})
 
 -- Bridge
 _G.QU33N = {
