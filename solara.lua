@@ -361,6 +361,95 @@ do
     end)
 end
 
+local function enableRemoteLogger()
+    if _G.__REMOTE_LOGGER_RUNNING then
+        pushLog("WARN","Remote Logger already running")
+        return
+    end
+    _G.__REMOTE_LOGGER_RUNNING = true
+
+    pushLog("INFO","=== REMOTE LOGGER STARTED ===")
+
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+
+    local function safeToString(v, depth)
+        depth = depth or 0
+        if depth > 2 then return "..." end
+
+        if typeof(v) == "Instance" then
+            return v:GetFullName()
+        elseif typeof(v) == "table" then
+            local t = {}
+            for k,val in pairs(v) do
+                table.insert(t, tostring(k).."="..safeToString(val, depth+1))
+            end
+            return "{"..table.concat(t,", ").."}"
+        else
+            return tostring(v)
+        end
+    end
+
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    setreadonly(mt, false)
+
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+
+        if (method == "FireServer" or method == "InvokeServer")
+            and typeof(self) == "Instance"
+            and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+
+            local out = {}
+            for i,v in ipairs(args) do
+                out[i] = safeToString(v)
+            end
+
+            pushLog("REMOTE "..method,
+                self:GetFullName().." ARGS: "..table.concat(out, " | ")
+            )
+        end
+
+        return oldNamecall(self, ...)
+    end)
+
+    setreadonly(mt, true)
+
+    local function hookRemote(remote)
+        if remote:IsA("RemoteEvent") then
+            remote.OnClientEvent:Connect(function(...)
+                local args = {...}
+                local out = {}
+                for i,v in ipairs(args) do
+                    out[i] = safeToString(v)
+                end
+
+                pushLog("REMOTE RECEIVE",
+                    remote:GetFullName().." ARGS: "..table.concat(out, " | ")
+                )
+            end)
+        end
+    end
+
+    for _,inst in ipairs(game:GetDescendants()) do
+        if inst:IsA("RemoteEvent") then
+            hookRemote(inst)
+        end
+    end
+
+    game.DescendantAdded:Connect(function(inst)
+        if inst:IsA("RemoteEvent") then
+            hookRemote(inst)
+        end
+    end)
+
+    pushLog("INFO","=== REMOTE LOGGER READY ===")
+end
+
+enableRemoteLogger()
+
 
 -- Init
 setActive("Info")
