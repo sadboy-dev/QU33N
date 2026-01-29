@@ -390,6 +390,13 @@ do
                     out[i] = safeToString(v)
                 end
 
+                -- FILTER: skip Remotes.Set dengan args "Time"
+                if self.Name == "Set" and self.Parent and self.Parent.Name == "Remotes" then
+                    if #out == 1 and out[1] == "Time" then
+                        return oldNamecall(self, ...)
+                    end
+                end
+
                 addLog("[REMOTE "..method.."] "..self:GetFullName().." ARGS: "..table.concat(out, " | "), Color3.fromRGB(200, 160, 255)) -- ungu
             end
 
@@ -405,6 +412,13 @@ do
                     local out = {}
                     for i,v in ipairs(args) do
                         out[i] = safeToString(v)
+                    end
+
+                    -- FILTER Receive Remotes.Set Time
+                    if remote.Name == "Set" and remote.Parent and remote.Parent.Name == "Remotes" then
+                        if #out == 1 and out[1] == "Time" then
+                            return
+                        end
                     end
 
                     addLog("[REMOTE RECEIVE] "..remote:GetFullName().." ARGS: "..table.concat(out, " | "), Color3.fromRGB(160, 255, 160)) -- hijau
@@ -431,7 +445,7 @@ do
     enableRemoteLogger()
 
     -- ===============================
-    -- Content auto-update
+    -- Content auto-update dari Logs
     -- ===============================
     task.spawn(function()
         local last = 0
@@ -451,7 +465,6 @@ do
         Card.Size = UDim2.new(1,-6,0, layout.AbsoluteContentSize.Y + 60)
     end)
 end
-
 
 
 -- Init
