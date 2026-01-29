@@ -1,4 +1,4 @@
---// QU33N FULL SINGLE FILE (GUI CORE + INFO + LIVE LOG TAB + MOBILE TAB SCROLL)
+--// QU33N FULL SINGLE FILE (MOBILE SIZE FIX + SINGLE LOG CARD + SCROLL TABS)
 
 repeat task.wait() until game:IsLoaded()
 task.wait(0.2)
@@ -9,6 +9,9 @@ local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+
+-- Detect Mobile
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 -- Notify
 local function notify(text)
@@ -35,12 +38,12 @@ local Theme = {
 	Accent = Color3.fromRGB(79,139,255)
 }
 
--- Responsive
+-- Responsive Size
 local function responsiveSize()
-	if UserInputService.TouchEnabled then
-		return UDim2.new(0.92,0,0.80,0)
+	if isMobile then
+		return UDim2.new(0.80,0,0.78,0) -- MOBILE smaller
 	else
-		return UDim2.new(0.38,0,0.72,0)
+		return UDim2.new(0.38,0,0.72,0) -- PC same
 	end
 end
 
@@ -185,10 +188,9 @@ TabBar.Position = UDim2.new(0,16,0,58)
 TabBar.Size = UDim2.new(1,-32,0,40)
 TabBar.BackgroundTransparency = 1
 
--- SCROLLABLE TAB CONTAINER
+-- Scrollable Tabs
 local TabsContainer = Instance.new("ScrollingFrame", TabBar)
 TabsContainer.Size = UDim2.new(1,0,1,0)
-TabsContainer.CanvasSize = UDim2.new(0,0,0,0)
 TabsContainer.AutomaticCanvasSize = Enum.AutomaticSize.X
 TabsContainer.ScrollingDirection = Enum.ScrollingDirection.X
 TabsContainer.ScrollBarThickness = 0
@@ -208,44 +210,16 @@ Pages.BackgroundTransparency = 1
 local pageList = {}
 local tabButtons = {}
 
--- LOG SYSTEM
+-- LOG STORAGE
 local LogMessages = {}
-
-local function createLogCard(scroll, titleText, descText)
-	local Card = Instance.new("Frame", scroll)
-	Card.Size = UDim2.new(1, -6, 0, 110)
-	Card.BackgroundColor3 = Theme.Panel
-	Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 16)
-
-	local Title = Instance.new("TextLabel", Card)
-	Title.Text = titleText
-	Title.Font = Enum.Font.GothamBold
-	Title.TextSize = 15
-	Title.TextColor3 = Theme.Accent
-	Title.BackgroundTransparency = 1
-	Title.Position = UDim2.new(0, 16, 0, 12)
-	Title.Size = UDim2.new(1, -32, 0, 22)
-	Title.TextXAlignment = Enum.TextXAlignment.Left
-
-	local Desc = Instance.new("TextLabel", Card)
-	Desc.Text = descText
-	Desc.Font = Enum.Font.Gotham
-	Desc.TextSize = 12
-	Desc.TextColor3 = Theme.SubText
-	Desc.BackgroundTransparency = 1
-	Desc.Position = UDim2.new(0, 16, 0, 38)
-	Desc.Size = UDim2.new(1, -32, 0, 60)
-	Desc.TextWrapped = true
-	Desc.TextXAlignment = Enum.TextXAlignment.Left
-	Desc.TextYAlignment = Enum.TextYAlignment.Top
-end
+local LogTextLabel
 
 local function pushLog(text)
 	local msg = os.date("[%H:%M:%S] ") .. tostring(text)
 	table.insert(LogMessages, msg)
 
-	if pageList.Log and pageList.Log.Scroll then
-		createLogCard(pageList.Log.Scroll, "Event Log", msg)
+	if LogTextLabel then
+		LogTextLabel.Text = table.concat(LogMessages, "\n")
 	end
 end
 
@@ -284,7 +258,6 @@ local function createPage(name)
 	pageList[name] = p
 
 	local Scroll = Instance.new("ScrollingFrame", p)
-	Scroll.Name = "Scroll"
 	Scroll.Size = UDim2.new(1,0,1,0)
 	Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -297,7 +270,24 @@ local function createPage(name)
 
 	-- LOG TAB
 	if name == "Log" then
-		pushLog("Log tab initialized")
+		local Card = Instance.new("Frame", Scroll)
+		Card.Size = UDim2.new(1, -6, 0, 300)
+		Card.BackgroundColor3 = Theme.Panel
+		Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 16)
+
+		LogTextLabel = Instance.new("TextLabel", Card)
+		LogTextLabel.Size = UDim2.new(1, -20, 1, -20)
+		LogTextLabel.Position = UDim2.new(0,10,0,10)
+		LogTextLabel.BackgroundTransparency = 1
+		LogTextLabel.TextWrapped = true
+		LogTextLabel.TextXAlignment = Enum.TextXAlignment.Left
+		LogTextLabel.TextYAlignment = Enum.TextYAlignment.Top
+		LogTextLabel.Font = Enum.Font.Gotham
+		LogTextLabel.TextSize = 12
+		LogTextLabel.TextColor3 = Theme.SubText
+		LogTextLabel.Text = "Log Initialized..."
+
+		pushLog("Log system ready")
 		return
 	end
 
@@ -342,13 +332,10 @@ local function createPage(name)
 			Btn.TextColor3 = Theme.Text
 			Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 12)
 
-			if callback then
-				Btn.MouseButton1Click:Connect(callback)
-			end
+			if callback then Btn.MouseButton1Click:Connect(callback) end
 		end
 	end
 
-	-- INFO TAB ORIGINAL CONTENT
 	if name == "Info" then
 		createCard("QU33N UI","QU33N adalah UI modular terinspirasi Chloe X.\nMenggunakan sistem loader → main → gui → tabs.",nil)
 		createCard("Fast Fishing","Support Blatant V1 dan Blatant V2.\nOptimized untuk FishIt & Delta Mobile.",nil)
@@ -382,4 +369,4 @@ warn = function(...)
 end
 
 pushLog("GUI Loaded Successfully")
-notify("QU33N Loaded — Mobile Ready")
+notify("QU33N Loaded — Mobile Optimized")
