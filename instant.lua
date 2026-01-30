@@ -65,6 +65,7 @@ end
 local function StartInstantFishing()
     task.spawn(function()
         pcall(function() EquipToolFromHotbar:FireServer(1) end)
+        print("Panggil Auto Equid")
         task.wait(0.5)
         while InstantFishingEnabled do
             pcall(function()
@@ -80,6 +81,7 @@ local function StartInstantFishing()
                     pcall(function()
                         RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
                     end)
+                    print("Panggil Mini Game")
 
                     local WaitStart = tick()
                     repeat task.wait() until FishMiniData.LastShift or tick() - WaitStart > 1
@@ -88,6 +90,7 @@ local function StartInstantFishing()
                     pcall(function()
                         FishingCompleted:FireServer()
                     end)
+                    print("panggil Mancing Selesai")
 
                     local CurrentCount = getFishCount()
                     local CountWaitStart = tick()
@@ -96,6 +99,7 @@ local function StartInstantFishing()
                     pcall(function()
                         CancelFishingInputs:InvokeServer()
                     end)
+                    print("Batal Mancing")
                 end
             end)
             task.wait()
