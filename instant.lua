@@ -14,8 +14,9 @@ local RequestFishingMinigame = NetFolder:WaitForChild("RF/RequestFishingMinigame
 local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted")
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
 local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
+local ReplicateTextEffect = NetFolder:FindFirstChild("RE/ReplicateTextEffect")
 
--- GUI Library (simple)
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "InstantFishingGUI"
 ScreenGui.ResetOnSpawn = false
@@ -49,7 +50,6 @@ if MiniEvent then
     MiniEvent.OnClientEvent:Connect(function(param1, param2)
         if param1 and param2 then
             FishMiniData = param2
-            print(FishMiniData)
         end
     end)
 end
@@ -61,11 +61,48 @@ local function getFishCount()
     return tonumber((BagSizeLabel.Text or "0/???"):match("(%d+)/")) or 0
 end
 
+-- Function detect fish hooked (print RGB saja, hanya player sendiri)
+local function FishHookListener()
+    if not ReplicateTextEffect then return end
+    local userId = tostring(LocalPlayer.UserId)
+
+    ReplicateTextEffect.OnClientEvent:Connect(function(args)
+        if args.TextData and args.TextData.Text == "!" then
+            local container = args.Container
+            if container and container:IsDescendantOf(LocalPlayer.Character) then
+                -- Ambil nama karakter
+                local characterName = container.Parent and container.Parent.Name or "Unknown"
+
+                -- Ambil TextColor aman
+                local r, g, b = 0, 0, 0
+                if typeof(args.TextData.TextColor) == "Color3" then
+                    r, g, b = args.TextData.TextColor.R, args.TextData.TextColor.G, args.TextData.TextColor.B
+                elseif typeof(args.TextData.TextColor) == "ColorSequence" then
+                    if #args.TextData.TextColor.Keypoints > 0 then
+                        local kp = args.TextData.TextColor.Keypoints[1].Value
+                        r, g, b = kp.R, kp.G, kp.B
+                    end
+                elseif type(args.TextData.TextColor) == "table" then
+                    r, g, b = args.TextData.TextColor[1] or 0, args.TextData.TextColor[2] or 0, args.TextData.TextColor[3] or 0
+                end
+
+                print("=== Player Info ===")
+                print("UUID:", args.UUID)
+                print("Userid:", userId)
+                print("Container:", characterName)
+                print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
+                print("Duration:", args.Duration)
+            end
+        end
+    end)
+end
+
+FishHookListener()
+
 -- Instant Fishing Loop
 local function StartInstantFishing()
     task.spawn(function()
         pcall(function() EquipToolFromHotbar:FireServer(1) end)
-        print("Panggil Auto Equid")
         task.wait(0.5)
         while InstantFishingEnabled do
             pcall(function()
@@ -81,7 +118,6 @@ local function StartInstantFishing()
                     pcall(function()
                         RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
                     end)
-                    print("Panggil Mini Game")
 
                     local WaitStart = tick()
                     repeat task.wait() until FishMiniData.LastShift or tick() - WaitStart > 1
@@ -90,7 +126,6 @@ local function StartInstantFishing()
                     pcall(function()
                         FishingCompleted:FireServer()
                     end)
-                    print("panggil Mancing Selesai")
 
                     local CurrentCount = getFishCount()
                     local CountWaitStart = tick()
@@ -99,7 +134,6 @@ local function StartInstantFishing()
                     pcall(function()
                         CancelFishingInputs:InvokeServer()
                     end)
-                    print("Batal Mancing")
                 end
             end)
             task.wait()
