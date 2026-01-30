@@ -1,13 +1,10 @@
---==================================================
--- LEGIT AUTO PERFECT (1 CLICK PRESISI)
---==================================================
-
 print("=== LEGIT AUTO PERFECT START ===")
 
 --// SERVICES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -20,12 +17,14 @@ local NetFolder = ReplicatedStorage
     :WaitForChild("net")
 
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
+local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted")
+local ReplicateTextEffect = NetFolder:WaitForChild("RE/ReplicateTextEffect")
 
 --// CONTROLLER
 local FishingController = require(ReplicatedStorage.Controllers.FishingController)
 print("[OK] FishingController loaded")
 
---// INPUT HOOK (UNTUK RELEASE PERFECT)
+--// INPUT HOOK (RELEASE CHARGE)
 local InputControl = require(ReplicatedStorage.Modules.InputControl)
 local OldRegister = InputControl.RegisterMouseReleased
 local MouseReleaseCallback
@@ -39,6 +38,8 @@ print("[OK] Input hook installed")
 
 --// STATE
 local Enabled = false
+local FishHooked = false
+local LegitShakeDelay = 0.05 -- interval klik LEGIT
 
 --==================================================
 -- PERFECT CAST (CHARGE + RELEASE)
@@ -47,18 +48,18 @@ local function PerfectCast()
     local Camera = workspace.CurrentCamera
     if not Camera then return end
 
-    local Center = Vector2.new(
-        Camera.ViewportSize.X / 2,
-        Camera.ViewportSize.Y / 2
-    )
+    local Center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 
+    print("[STEP] Requesting Charge Fishing Rod")
     FishingController:RequestChargeFishingRod(Center, false)
 
     local ChargeGui = PlayerGui:WaitForChild("Charge", 3)
-    if not ChargeGui then return end
+    if not ChargeGui then 
+        print("[ERROR] Charge GUI not found") 
+        return 
+    end
 
     local Bar = ChargeGui.Main.CanvasGroup.Bar
-
     repeat task.wait() until Bar.Size.Y.Scale > 0
 
     local start = tick()
@@ -69,12 +70,41 @@ local function PerfectCast()
 
     if MouseReleaseCallback then
         MouseReleaseCallback()
-        print("[AUTO PERFECT] Charge Release")
+        print("[STEP] Charge Release (Perfect Cast)")
     end
 end
 
 --==================================================
--- MAIN LOOP (COSMETIC BASED)
+-- DETEKSI IKAN NYANGKUT
+--==================================================
+local function WaitFishHooked(timeout)
+    timeout = timeout or 5
+    local startTime = tick()
+    FishHooked = false
+
+    local conn
+    conn = ReplicateTextEffect.OnClientEvent:Connect(function(args)
+        if type(args.TextData) == "table" and args.TextData.Text == "!" then
+            local attach = args.TextData.AttachTo
+            if attach and attach:IsDescendantOf(LocalPlayer.Character) then
+                FishHooked = true
+                print("[INFO] Fish hooked detected!")
+            end
+        end
+    end)
+
+    repeat task.wait(0.03)
+    until FishHooked or (tick() - startTime) > timeout
+
+    conn:Disconnect()
+    if not FishHooked then
+        print("[WARN] Fish hooked NOT detected within timeout")
+    end
+    return FishHooked
+end
+
+--==================================================
+-- MAIN LOOP
 --==================================================
 local function StartLegitFishing(state)
     Enabled = state
@@ -91,6 +121,7 @@ local function StartLegitFishing(state)
     -- EQUIP ROD
     task.spawn(function()
         pcall(function()
+            print("[STEP] Equipping rod")
             EquipToolFromHotbar:FireServer(1)
         end)
     end)
@@ -101,41 +132,40 @@ local function StartLegitFishing(state)
         local CosmeticFolder = Workspace:WaitForChild("CosmeticFolder")
 
         while Enabled do
+            -- Lempar umpan dengan perfect jika belum nyangkut
             if not CosmeticFolder:FindFirstChild(UserId) then
+                print("[STEP] Casting rod (perfect)")
                 PerfectCast()
-                task.wait(0.25)
+                task.wait(0.2)
             end
 
+            -- Tunggu minigame / ikan nyangkut
             while CosmeticFolder:FindFirstChild(UserId) and Enabled do
-                task.wait(0.15)
-            end
-
-            task.wait(0.15)
-        end
-    end)
-
-    -- 🔥 1 CLICK PRESISI (MINIGAME)
-    task.spawn(function()
-        local UserId = tostring(LocalPlayer.UserId)
-        local CosmeticFolder = Workspace:WaitForChild("CosmeticFolder")
-
-        while Enabled do
-            if CosmeticFolder:FindFirstChild(UserId) then
-                local fishingGui = PlayerGui:FindFirstChild("Fishing")
-                local mainGui = fishingGui and fishingGui:FindFirstChild("Main")
-                local bar = mainGui
-                    and mainGui:FindFirstChild("CanvasGroup")
-                    and mainGui.CanvasGroup:FindFirstChild("Bar")
-
-                if bar and bar.Size.Y.Scale >= 0.88 then
+                local hooked = WaitFishHooked(5)
+                if hooked then
+                    -- Minigame perfect click
+                    print("[STEP] Performing minigame click")
                     FishingController:RequestFishingMinigameClick()
-                    print("[AUTO PERFECT] Minigame Click")
 
-                    -- tunggu selesai → cegah spam
-                    repeat
-                        task.wait(0.05)
-                    until not CosmeticFolder:FindFirstChild(UserId)
+                    -- Klik LEGIT menggunakan shake delay, di posisi mana saja
+                    task.spawn(function()
+                        local start = tick()
+                        while CosmeticFolder:FindFirstChild(UserId) and Enabled do
+                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                            task.wait(LegitShakeDelay)
+                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+                            task.wait(LegitShakeDelay)
+                        end
+                    end)
+
+                    -- DISABLE submit server sementara
+                    -- pcall(function()
+                    --     FishingCompleted:FireServer()
+                    -- end)
+                    -- print("[STEP] Fishing Completed (SERVER)")
                 end
+
+                task.wait(0.05)
             end
 
             task.wait(0.03)
@@ -144,7 +174,7 @@ local function StartLegitFishing(state)
 end
 
 --==================================================
--- GUI KECIL (ON / OFF)
+-- GUI
 --==================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AutoPerfectGui"
