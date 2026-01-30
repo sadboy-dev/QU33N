@@ -17,7 +17,7 @@ local NetFolder = ReplicatedStorage
     :WaitForChild("net")
 
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
-local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted")
+-- local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted") -- komentar dulu
 local ReplicateTextEffect = NetFolder:WaitForChild("RE/ReplicateTextEffect")
 
 --// CONTROLLER
@@ -38,8 +38,19 @@ print("[OK] Input hook installed")
 
 --// STATE
 local Enabled = false
+local Casting = false
+local WaitingForHook = false
 local FishHooked = false
 local LegitShakeDelay = 0.05 -- interval klik LEGIT
+
+--==================================================
+-- UTILITY: GET FISH COUNT
+--==================================================
+local function getFishCount()
+    local InventoryGui = PlayerGui:WaitForChild("Inventory"):WaitForChild("Main")
+    local BagSizeLabel = InventoryGui.Top.Options.Fish:WaitForChild("Label"):WaitForChild("BagSize")
+    return tonumber((BagSizeLabel.Text or "0/???"):match("(%d+)/")) or 0
+end
 
 --==================================================
 -- PERFECT CAST (CHARGE + RELEASE)
@@ -126,46 +137,39 @@ local function StartLegitFishing(state)
         end)
     end)
 
-    -- CAST LOOP
+    -- CAST & HOOK LOOP
     task.spawn(function()
         local UserId = tostring(LocalPlayer.UserId)
         local CosmeticFolder = Workspace:WaitForChild("CosmeticFolder")
 
         while Enabled do
-            -- Lempar umpan dengan perfect jika belum nyangkut
-            if not CosmeticFolder:FindFirstChild(UserId) then
-                print("[STEP] Casting rod (perfect)")
+            -- Lempar umpan hanya jika tidak sedang cast dan tidak menunggu hook
+            if not Casting and not WaitingForHook and not CosmeticFolder:FindFirstChild(UserId) then
+                Casting = true
+                print("[STEP] Casting rod (Perfect)")
                 PerfectCast()
-                task.wait(0.2)
+                Casting = false
+
+                -- mulai menunggu hook
+                WaitingForHook = true
+                print("[INFO] Waiting for fish hooked...")
+                WaitFishHooked(5)
+                WaitingForHook = false
             end
 
-            -- Tunggu minigame / ikan nyangkut
-            while CosmeticFolder:FindFirstChild(UserId) and Enabled do
-                local hooked = WaitFishHooked(5)
-                if hooked then
-                    -- Minigame perfect click
-                    print("[STEP] Performing minigame click")
-                    FishingController:RequestFishingMinigameClick()
+            -- LEGIT shake & inventory check
+            if FishHooked then
+                local prevCount = getFishCount()
+                print("[STEP] Start LEGIT shake")
+                repeat
+                    VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,0)
+                    task.wait(LegitShakeDelay)
+                    VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,0)
+                    task.wait(LegitShakeDelay)
+                until getFishCount() > prevCount
 
-                    -- Klik LEGIT menggunakan shake delay, di posisi mana saja
-                    task.spawn(function()
-                        local start = tick()
-                        while CosmeticFolder:FindFirstChild(UserId) and Enabled do
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                            task.wait(LegitShakeDelay)
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-                            task.wait(LegitShakeDelay)
-                        end
-                    end)
-
-                    -- DISABLE submit server sementara
-                    -- pcall(function()
-                    --     FishingCompleted:FireServer()
-                    -- end)
-                    -- print("[STEP] Fishing Completed (SERVER)")
-                end
-
-                task.wait(0.05)
+                print("[INFO] Fish obtained, ready for next cast")
+                FishHooked = false
             end
 
             task.wait(0.03)
