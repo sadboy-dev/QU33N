@@ -1,46 +1,22 @@
---[[ 
-Versi stabil:
-1. Log UI terbatas tinggi
-2. Log selalu sinkron dengan delta log
-3. List RemoteEvents bersih
-4. Path resolve lebih aman
---]]
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
---========================
--- NETFOLDER (lebih aman)
---========================
-local NetFolder
-pcall(function()
-    NetFolder = ReplicatedStorage:WaitForChild("Packages", 5)
-    if NetFolder then
-        NetFolder = NetFolder:FindFirstChild("_Index")
-        if NetFolder then
-            NetFolder = NetFolder:FindFirstChild("sleitnick_net@0.2.0")
-            if NetFolder then
-                NetFolder = NetFolder:FindFirstChild("net")
-            end
-        end
-    end
-end)
+-- NET FOLDER (Delta Mobile)
+local NetFolder = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
 
---========================
--- UI SETUP
---========================
+-- UI
 local gui = Instance.new("ScreenGui")
 gui.Name = "NetRemoteTester"
-gui.IgnoreGuiInset = true
-gui.ResetOnSpawn = false
 gui.Parent = Player:WaitForChild("PlayerGui")
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 400, 0, 250)
-main.Position = UDim2.new(0.5, -200, 0.3, 0)
+main.Size = UDim2.new(0, 360, 0, 220)
+main.Position = UDim2.new(0.5, -180, 0.3, 0)
 main.BackgroundColor3 = Color3.fromRGB(30,30,30)
 main.BorderSizePixel = 0
 main.Parent = gui
@@ -48,7 +24,6 @@ main.Parent = gui
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1,0,0,32)
 header.BackgroundColor3 = Color3.fromRGB(45,45,45)
-header.BorderSizePixel = 0
 header.Parent = main
 
 local title = Instance.new("TextLabel")
@@ -73,29 +48,23 @@ closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
 closeBtn.Parent = header
 
+-- CONTENT
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1,0,1,-32)
 content.Position = UDim2.new(0,0,0,32)
 content.BackgroundTransparency = 1
 content.Parent = main
 
--- LEFT PANEL (input + execute + log)
-local leftPanel = Instance.new("Frame")
-leftPanel.Size = UDim2.new(0.6,0,1,0)
-leftPanel.Position = UDim2.new(0,0,0,0)
-leftPanel.BackgroundTransparency = 1
-leftPanel.Parent = content
-
 local input = Instance.new("TextBox")
 input.Size = UDim2.new(1,-20,0,36)
 input.Position = UDim2.new(0,10,0,10)
-input.PlaceholderText = "Masukkan path atau klik list"
+input.PlaceholderText = "Klik list di kanan atau masukkan argumen"
 input.ClearTextOnFocus = false
 input.Font = Enum.Font.SourceSans
 input.TextSize = 14
 input.TextColor3 = Color3.new(1,1,1)
 input.BackgroundColor3 = Color3.fromRGB(50,50,50)
-input.Parent = leftPanel
+input.Parent = content
 
 local exec = Instance.new("TextButton")
 exec.Size = UDim2.new(1,-20,0,32)
@@ -105,19 +74,19 @@ exec.Font = Enum.Font.SourceSansBold
 exec.TextSize = 14
 exec.TextColor3 = Color3.new(1,1,1)
 exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
-exec.Parent = leftPanel
+exec.Parent = content
 
+-- LOG
 local logFrame = Instance.new("ScrollingFrame")
-logFrame.Size = UDim2.new(1,-20,1,-95)
+logFrame.Size = UDim2.new(1,-20,0,80)
 logFrame.Position = UDim2.new(0,10,0,95)
 logFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-logFrame.CanvasSize = UDim2.new(0,0,0,0)
 logFrame.ScrollBarThickness = 6
-logFrame.Parent = leftPanel
+logFrame.CanvasSize = UDim2.new(0,0,0,0)
+logFrame.Parent = content
 
 local logLabel = Instance.new("TextLabel")
 logLabel.Size = UDim2.new(1,0,0,0)
-logLabel.Position = UDim2.new(0,0,0,0)
 logLabel.BackgroundTransparency = 1
 logLabel.TextColor3 = Color3.fromRGB(0,255,0)
 logLabel.Font = Enum.Font.Code
@@ -128,132 +97,97 @@ logLabel.TextWrapped = true
 logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
 
--- RIGHT PANEL (list remotes)
-local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(0.4, -10, 1, -10)
-listFrame.Position = UDim2.new(0.6, 5, 0, 5)
-listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-listFrame.CanvasSize = UDim2.new(0,0,0,0)
-listFrame.ScrollBarThickness = 6
-listFrame.Parent = content
-
---========================
--- LOG FUNCTION
---========================
 local function addLog(text)
 	print(text) -- log delta
 	logLabel.Text ..= text .. "\n"
-	local maxHeight = 180
-	logLabel.Size = UDim2.new(1,0,0, math.min(logLabel.TextBounds.Y, maxHeight))
+	logLabel.Size = UDim2.new(1,0,0, math.min(logLabel.TextBounds.Y, 150))
 	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
-	logFrame.CanvasPosition = Vector2.new(0, logLabel.TextBounds.Y)
+	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
 end
 
---========================
--- CLOSE BUTTON
---========================
-closeBtn.MouseButton1Click:Connect(function()
-	gui:Destroy()
+-- DRAG
+local dragging = false
+local dragStart, startPos
+header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = main.Position
+	end
+end)
+UIS.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+	or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
 end)
 
---========================
--- RESOLVE PATH
---========================
-local function resolvePath(folder, fullPath)
-	local current = folder
-	for part in string.gmatch(fullPath, "[^/]+") do
-		if current then
-			current = current:FindFirstChild(part)
-		else
-			return nil
-		end
-	end
-	return current
-end
+-- LIST REMOTE DI KANAN
+local listFrame = Instance.new("ScrollingFrame")
+listFrame.Size = UDim2.new(0,120,1,-10)
+listFrame.Position = UDim2.new(1,-130,0,5)
+listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+listFrame.ScrollBarThickness = 6
+listFrame.CanvasSize = UDim2.new(0,0,0,0)
+listFrame.Parent = main
 
---========================
--- SCAN REMOTES
---========================
-local remotePaths = {}
-local function scanRemotes(folder, prefix)
-	prefix = prefix or ""
+local function scanRemotes(folder)
+	local y = 0
 	for _, obj in ipairs(folder:GetChildren()) do
-		local currentPath = prefix ~= "" and (prefix.."/"..obj.Name) or obj.Name
 		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-			table.insert(remotePaths, currentPath)
 			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1,-10,0,24)
-			btn.Position = UDim2.new(0,0,0,(#listFrame:GetChildren()-1)*26)
-			btn.Text = currentPath
+			btn.Size = UDim2.new(1,-4,0,24)
+			btn.Position = UDim2.new(0,2,0,y)
+			btn.Text = obj.Name
 			btn.Font = Enum.Font.SourceSans
 			btn.TextSize = 14
 			btn.TextColor3 = Color3.new(1,1,1)
 			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
 			btn.Parent = listFrame
 			btn.MouseButton1Click:Connect(function()
-				input.Text = currentPath
+				input.Text = obj.Name
+				input._target = obj -- simpan reference langsung
 			end)
+			y = y + 26
 		end
 		if #obj:GetChildren() > 0 then
-			scanRemotes(obj, currentPath)
+			scanRemotes(obj)
 		end
 	end
-	listFrame.CanvasSize = UDim2.new(0,0,0,(#listFrame:GetChildren()-1)*26)
+	listFrame.CanvasSize = UDim2.new(0,0,y)
 end
 
-if NetFolder then
-	addLog("[SYSTEM] Scan RemoteEvents/Functions...")
-	scanRemotes(NetFolder)
-	addLog("[SYSTEM] Scan selesai!")
-else
-	addLog("[ERROR] NetFolder tidak ditemukan. Delta Mobile mungkin berbeda.")
-end
+scanRemotes(NetFolder)
+addLog("[SYSTEM] Remote list siap")
 
---========================
--- EXECUTE LOGIC
---========================
+-- EXECUTE
 exec.MouseButton1Click:Connect(function()
-	local raw = input.Text
-	if raw == "" then
-		addLog("[ERROR] Input kosong")
-		return
-	end
-
-	local path, arg = raw:match("([^|]+)|?(.*)")
-	path = path and path:match("^%s*(.-)%s*$")
-	arg = arg and arg:match("^%s*(.-)%s*$")
-
-	if not NetFolder then
-		addLog("[ERROR] NetFolder tidak ditemukan")
-		return
-	end
-
-	local target = resolvePath(NetFolder, path)
+	local target = input._target
 	if not target then
-		addLog("[ERROR] Path tidak valid: "..path)
+		addLog("[ERROR] Remote tidak valid")
 		return
 	end
-
-	local finalArg
-	if arg ~= "" then
-		finalArg = tonumber(arg) or arg
-	end
-
-	addLog("[REMOTE]: "..path)
-	addLog("[PARAMS]: "..tostring(finalArg))
+	local arg = tonumber(input.Text:match("|%s*(%d+)")) or 1
+	addLog("[REMOTE]: "..target.Name)
+	addLog("[PARAMS]: "..tostring(arg))
 	addLog("-----------------------------------------")
-
-	local status, res = pcall(function()
+	pcall(function()
 		if target:IsA("RemoteEvent") then
-			target:FireServer(finalArg)
+			target:FireServer(arg)
 		elseif target:IsA("RemoteFunction") then
-			local r = target:InvokeServer(finalArg)
-			addLog("[RECV]: "..tostring(r))
-		else
-			addLog("[ERROR]: Target bukan RemoteEvent/Function")
+			local res = target:InvokeServer(arg)
+			addLog("[RECV]: "..tostring(res))
 		end
 	end)
-	if not status then
-		addLog("[ERROR]: "..tostring(res))
-	end
 end)
