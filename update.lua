@@ -5,12 +5,40 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
 --========================
--- BASE NET PATH
+-- SAFE WAIT FUNCTION
 --========================
-local NetFolder = ReplicatedStorage
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
+local function safeWait(parent, childName, timeout)
+    local start = tick()
+    while not parent:FindFirstChild(childName) do
+        if tick() - start > (timeout or 5) then
+            warn("[SAFEWAIT] "..childName.." not found in "..parent:GetFullName())
+            return nil
+        end
+        task.wait(0.1)
+    end
+    return parent[childName]
+end
+
+--========================
+-- NET PATH (SAFE)
+--========================
+local IndexFolder = safeWait(ReplicatedStorage, "_Index")
+if not IndexFolder then
+    warn("_Index folder not found! Exiting script.")
+    return
+end
+
+local NetPackage = safeWait(IndexFolder, "sleitnick_net@0.2.0")
+if not NetPackage then
+    warn("sleitnick_net@0.2.0 package not found! Exiting script.")
+    return
+end
+
+local NetFolder = safeWait(NetPackage, "net")
+if not NetFolder then
+    warn("net folder not found! Exiting script.")
+    return
+end
 
 --========================
 -- LOGGING SETUP
@@ -29,12 +57,6 @@ local function save(txt)
     if appendfile then
         appendfile(FILE, txt .. "\n")
     end
-end
-
-local function log(txt)
-    print("[NET] " .. txt)
-    save("[NET] " .. txt)
-    addLog("[NET] " .. txt)
 end
 
 --========================
@@ -153,6 +175,7 @@ local function addLog(text)
     logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
     logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
     logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+    save(text)
 end
 
 --========================
@@ -205,7 +228,7 @@ end)
 --========================
 -- REMOTE SCAN & LISTENER
 --========================
-log("Scanning RemoteEvents (partial match)...")
+addLog("Scanning RemoteEvents (partial match)...")
 local foundAny = false
 
 for _, r in ipairs(ReplicatedStorage:GetDescendants()) do
@@ -215,14 +238,14 @@ for _, r in ipairs(ReplicatedStorage:GetDescendants()) do
 
 		if lname:find("bait") or lname:find("cast") or full:find("baitcast") then
 			foundAny = true
-			log("FOUND REMOTE: "..r:GetFullName())
+			addLog("FOUND REMOTE: "..r:GetFullName())
 
 			r.OnClientEvent:Connect(function(...)
 				local args = {...}
 				if args[1] == Player then
-					log("REMOTE FIRED by LocalPlayer -> "..r.Name)
+					addLog("REMOTE FIRED by LocalPlayer -> "..r.Name)
 				else
-					log("REMOTE FIRED -> "..r.Name)
+					addLog("REMOTE FIRED -> "..r.Name)
 				end
 			end)
 		end
@@ -230,9 +253,9 @@ for _, r in ipairs(ReplicatedStorage:GetDescendants()) do
 end
 
 if not foundAny then
-	log("NO BAIT/CAST RELATED REMOTE FOUND")
+	addLog("NO BAIT/CAST RELATED REMOTE FOUND")
 else
-	log("Waiting for cast...")
+	addLog("Waiting for cast...")
 end
 
 --========================
