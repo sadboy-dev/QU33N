@@ -103,8 +103,8 @@ log.TextColor3 = Color3.fromRGB(0,255,0)
 log.Font = Enum.Font.Code
 log.TextSize = 12
 log.TextWrapped = true
-log.TextYAlignment = Top
-log.TextXAlignment = Left
+log.TextYAlignment = Enum.TextYAlignment.Top
+log.TextXAlignment = Enum.TextXAlignment.Left
 log.Text = "[SYSTEM] Ready\n"
 log.Parent = main
 
