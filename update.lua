@@ -1,6 +1,4 @@
---// Net Remote Tester - FINAL FIXED VERSION
---// LocalScript
-
+--// Net Remote Tester - FINAL FIX + AUTO SCROLL
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -77,7 +75,7 @@ closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
 closeBtn.Parent = header
 
 --========================
--- CONTENT FRAME (ANTI BUG)
+-- CONTENT FRAME
 --========================
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1,0,1,-32)
@@ -113,20 +111,28 @@ exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
 exec.Parent = content
 
 --========================
--- LOG
+-- LOG SCROLLING FRAME
 --========================
-local log = Instance.new("TextLabel")
-log.Size = UDim2.new(1,-20,0,60)
-log.Position = UDim2.new(0,10,0,95)
-log.BackgroundColor3 = Color3.fromRGB(20,20,20)
-log.TextColor3 = Color3.fromRGB(0,255,0)
-log.Font = Enum.Font.Code
-log.TextSize = 12
-log.TextWrapped = true
-log.TextXAlignment = Enum.TextXAlignment.Left
-log.TextYAlignment = Enum.TextYAlignment.Top
-log.Text = "[SYSTEM] Ready\n"
-log.Parent = content
+local logFrame = Instance.new("ScrollingFrame")
+logFrame.Size = UDim2.new(1,-20,0,60)
+logFrame.Position = UDim2.new(0,10,0,95)
+logFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+logFrame.CanvasSize = UDim2.new(0,0,0,0)
+logFrame.ScrollBarThickness = 6
+logFrame.Parent = content
+
+local logLabel = Instance.new("TextLabel")
+logLabel.Size = UDim2.new(1,0,0,0)
+logLabel.Position = UDim2.new(0,0,0,0)
+logLabel.BackgroundTransparency = 1
+logLabel.TextColor3 = Color3.fromRGB(0,255,0)
+logLabel.Font = Enum.Font.Code
+logLabel.TextSize = 12
+logLabel.TextXAlignment = Enum.TextXAlignment.Left
+logLabel.TextYAlignment = Enum.TextYAlignment.Top
+logLabel.TextWrapped = true
+logLabel.Text = "[SYSTEM] Ready\n"
+logLabel.Parent = logFrame
 
 --========================
 -- DRAG SUPPORT
@@ -179,12 +185,21 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 --========================
+-- HELPER: ADD LOG
+local function addLog(text)
+	logLabel.Text ..= text .. "\n"
+	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
+	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
+	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+end
+
+--========================
 -- EXECUTE LOGIC
 --========================
 exec.MouseButton1Click:Connect(function()
 	local raw = input.Text
 	if raw == "" then
-		log.Text ..= "[ERROR] Input kosong\n"
+		addLog("[ERROR] Input kosong")
 		return
 	end
 
@@ -192,11 +207,12 @@ exec.MouseButton1Click:Connect(function()
 	path = path and path:match("^%s*(.-)%s*$")
 	arg = arg and arg:match("^%s*(.-)%s*$")
 
+	-- RESOLVE NESTED PATH
 	local current = NetFolder
 	for part in string.gmatch(path, "[^/]+") do
 		current = current:FindFirstChild(part)
 		if not current then
-			log.Text ..= "[ERROR] Path tidak valid: "..path.."\n"
+			addLog("[ERROR] Path tidak valid: "..path)
 			return
 		end
 	end
@@ -208,13 +224,11 @@ exec.MouseButton1Click:Connect(function()
 
 	if current:IsA("RemoteEvent") then
 		current:FireServer(finalArg)
-		log.Text ..= "[SEND] FireServer -> "..path.." ("..tostring(finalArg)..")\n"
-
+		addLog("[SEND] FireServer -> "..path.." ("..tostring(finalArg)..")")
 	elseif current:IsA("RemoteFunction") then
 		local res = current:InvokeServer(finalArg)
-		log.Text ..= "[RECV] "..tostring(res).."\n"
-
+		addLog("[RECV] "..tostring(res))
 	else
-		log.Text ..= "[ERROR] Target bukan RemoteEvent / RemoteFunction\n"
+		addLog("[ERROR] Target bukan RemoteEvent / RemoteFunction")
 	end
 end)
