@@ -3,7 +3,7 @@ local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
--- NET FOLDER (Delta Mobile)
+-- NET FOLDER
 local NetFolder = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
     :WaitForChild("sleitnick_net@0.2.0")
@@ -55,7 +55,7 @@ closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
 -- CONTENT LEFT (input + execute + log)
 local content = Instance.new("Frame")
-content.Size = UDim2.new(1,-130,1,-32) -- sisakan 130px untuk list
+content.Size = UDim2.new(1,-130,1,-32)
 content.Position = UDim2.new(0,0,0,32)
 content.BackgroundTransparency = 1
 content.Parent = main
@@ -105,14 +105,17 @@ logLabel.Parent = logFrame
 local function addLog(text)
 	print(text)
 	logLabel.Text ..= text .. "\n"
-	logLabel.Size = UDim2.new(1,0,0, math.min(logLabel.TextBounds.Y, 150))
+	-- batasi tinggi log
+	local maxHeight = 110
+	local textHeight = math.min(logLabel.TextBounds.Y, maxHeight)
+	logLabel.Size = UDim2.new(1,0,0,textHeight)
 	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
 end
 
 -- LIST REMOTE DI KANAN
 local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(0,120,1,-10)
+listFrame.Size = UDim2.new(0,120,1,-10) -- batasi supaya tidak menimpa close
 listFrame.Position = UDim2.new(1,-125,0,5)
 listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 listFrame.ScrollBarThickness = 6
@@ -133,7 +136,7 @@ local function scanRemotes(folder)
 			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
 			btn.Parent = listFrame
 
-			RemoteRefs[obj.Name] = obj -- simpan reference di table
+			RemoteRefs[obj.Name] = obj
 
 			btn.MouseButton1Click:Connect(function()
 				input.Text = obj.Name
@@ -158,7 +161,7 @@ exec.MouseButton1Click:Connect(function()
 		addLog("[ERROR] Remote tidak valid: "..tostring(name))
 		return
 	end
-	local arg = 1 -- default
+	local arg = 1
 	addLog("[REMOTE]: "..target.Name)
 	addLog("[PARAMS]: "..tostring(arg))
 	addLog("-----------------------------------------")
