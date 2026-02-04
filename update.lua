@@ -1,4 +1,4 @@
---// Net Remote Tester - FINAL FIX + LOG FORMAT
+--// Net Remote Tester - FIXED + LOG BERFUNGSI1
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -134,8 +134,12 @@ logLabel.TextWrapped = true
 logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
 
+--========================
+-- HELPER: ADD LOG DENGAN DELAY UNTUK TEXTBUNDS
+--========================
 local function addLog(text)
 	logLabel.Text ..= text .. "\n"
+	task.wait() -- tunggu satu frame agar TextBounds diperbarui
 	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
@@ -175,7 +179,7 @@ UIS.InputEnded:Connect(function(i)
 end)
 
 --========================
--- BUTTON LOGIC
+-- BUTTON LOGIC MINIMIZE & CLOSE
 --========================
 local minimized = false
 minBtn.MouseButton1Click:Connect(function()
@@ -219,7 +223,7 @@ exec.MouseButton1Click:Connect(function()
 		finalArg = tonumber(arg) or arg
 	end
 
-	-- LOG DENGAN FORMAT YANG DIMINTA
+	-- LOG DENGAN FORMAT BARU
 	addLog("[REMOTE]: "..path)
 	addLog("[PARAMS]: "..tostring(finalArg))
 	addLog("-----------------------------------------")
