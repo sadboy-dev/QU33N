@@ -9,18 +9,22 @@ local NetFolder = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
 
+-- SIMPAN REFERENCE REMOTE
+local RemoteRefs = {}
+
 -- UI
 local gui = Instance.new("ScreenGui")
 gui.Name = "NetRemoteTester"
 gui.Parent = Player:WaitForChild("PlayerGui")
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 360, 0, 220)
-main.Position = UDim2.new(0.5, -180, 0.3, 0)
+main.Size = UDim2.new(0, 420, 0, 220)
+main.Position = UDim2.new(0.5, -210, 0.3, 0)
 main.BackgroundColor3 = Color3.fromRGB(30,30,30)
 main.BorderSizePixel = 0
 main.Parent = gui
 
+-- HEADER
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1,0,0,32)
 header.BackgroundColor3 = Color3.fromRGB(45,45,45)
@@ -47,10 +51,11 @@ closeBtn.TextSize = 14
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
 closeBtn.Parent = header
+closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
--- CONTENT
+-- CONTENT LEFT (input + execute + log)
 local content = Instance.new("Frame")
-content.Size = UDim2.new(1,0,1,-32)
+content.Size = UDim2.new(1,-130,1,-32) -- sisakan 130px untuk list
 content.Position = UDim2.new(0,0,0,32)
 content.BackgroundTransparency = 1
 content.Parent = main
@@ -58,7 +63,7 @@ content.Parent = main
 local input = Instance.new("TextBox")
 input.Size = UDim2.new(1,-20,0,36)
 input.Position = UDim2.new(0,10,0,10)
-input.PlaceholderText = "Klik list di kanan atau masukkan argumen"
+input.PlaceholderText = "Masukkan argumen (contoh: 1)"
 input.ClearTextOnFocus = false
 input.Font = Enum.Font.SourceSans
 input.TextSize = 14
@@ -78,7 +83,7 @@ exec.Parent = content
 
 -- LOG
 local logFrame = Instance.new("ScrollingFrame")
-logFrame.Size = UDim2.new(1,-20,0,80)
+logFrame.Size = UDim2.new(1,-20,0,110)
 logFrame.Position = UDim2.new(0,10,0,95)
 logFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 logFrame.ScrollBarThickness = 6
@@ -98,12 +103,74 @@ logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
 
 local function addLog(text)
-	print(text) -- log delta
+	print(text)
 	logLabel.Text ..= text .. "\n"
 	logLabel.Size = UDim2.new(1,0,0, math.min(logLabel.TextBounds.Y, 150))
 	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
 end
+
+-- LIST REMOTE DI KANAN
+local listFrame = Instance.new("ScrollingFrame")
+listFrame.Size = UDim2.new(0,120,1,-10)
+listFrame.Position = UDim2.new(1,-125,0,5)
+listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+listFrame.ScrollBarThickness = 6
+listFrame.CanvasSize = UDim2.new(0,0,0,0)
+listFrame.Parent = main
+
+local function scanRemotes(folder)
+	local y = 0
+	for _, obj in ipairs(folder:GetChildren()) do
+		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1,-4,0,24)
+			btn.Position = UDim2.new(0,2,0,y)
+			btn.Text = obj.Name
+			btn.Font = Enum.Font.SourceSans
+			btn.TextSize = 14
+			btn.TextColor3 = Color3.new(1,1,1)
+			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+			btn.Parent = listFrame
+
+			RemoteRefs[obj.Name] = obj -- simpan reference di table
+
+			btn.MouseButton1Click:Connect(function()
+				input.Text = obj.Name
+			end)
+			y = y + 26
+		end
+		if #obj:GetChildren() > 0 then
+			scanRemotes(obj)
+		end
+	end
+	listFrame.CanvasSize = UDim2.new(0,0,y)
+end
+
+scanRemotes(NetFolder)
+addLog("[SYSTEM] Remote list siap")
+
+-- EXECUTE
+exec.MouseButton1Click:Connect(function()
+	local name = input.Text
+	local target = RemoteRefs[name]
+	if not target then
+		addLog("[ERROR] Remote tidak valid: "..tostring(name))
+		return
+	end
+	local arg = 1 -- default
+	addLog("[REMOTE]: "..target.Name)
+	addLog("[PARAMS]: "..tostring(arg))
+	addLog("-----------------------------------------")
+	pcall(function()
+		if target:IsA("RemoteEvent") then
+			target:FireServer(arg)
+		elseif target:IsA("RemoteFunction") then
+			local res = target:InvokeServer(arg)
+			addLog("[RECV]: "..tostring(res))
+		end
+	end)
+end)
 
 -- DRAG
 local dragging = false
@@ -131,63 +198,4 @@ UIS.InputEnded:Connect(function(input)
 	or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = false
 	end
-end)
-
--- LIST REMOTE DI KANAN
-local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(0,120,1,-10)
-listFrame.Position = UDim2.new(1,-130,0,5)
-listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-listFrame.ScrollBarThickness = 6
-listFrame.CanvasSize = UDim2.new(0,0,0,0)
-listFrame.Parent = main
-
-local function scanRemotes(folder)
-	local y = 0
-	for _, obj in ipairs(folder:GetChildren()) do
-		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1,-4,0,24)
-			btn.Position = UDim2.new(0,2,0,y)
-			btn.Text = obj.Name
-			btn.Font = Enum.Font.SourceSans
-			btn.TextSize = 14
-			btn.TextColor3 = Color3.new(1,1,1)
-			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-			btn.Parent = listFrame
-			btn.MouseButton1Click:Connect(function()
-				input.Text = obj.Name
-				input._target = obj -- simpan reference langsung
-			end)
-			y = y + 26
-		end
-		if #obj:GetChildren() > 0 then
-			scanRemotes(obj)
-		end
-	end
-	listFrame.CanvasSize = UDim2.new(0,0,y)
-end
-
-scanRemotes(NetFolder)
-addLog("[SYSTEM] Remote list siap")
-
--- EXECUTE
-exec.MouseButton1Click:Connect(function()
-	local target = input._target
-	if not target then
-		addLog("[ERROR] Remote tidak valid")
-		return
-	end
-	local arg = tonumber(input.Text:match("|%s*(%d+)")) or 1
-	addLog("[REMOTE]: "..target.Name)
-	addLog("[PARAMS]: "..tostring(arg))
-	addLog("-----------------------------------------")
-	pcall(function()
-		if target:IsA("RemoteEvent") then
-			target:FireServer(arg)
-		elseif target:IsA("RemoteFunction") then
-			local res = target:InvokeServer(arg)
-			addLog("[RECV]: "..tostring(res))
-		end
-	end)
 end)
