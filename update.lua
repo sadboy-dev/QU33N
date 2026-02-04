@@ -1,4 +1,4 @@
---// Net Remote Tester - Side List + Full Path
+--// Net Remote Tester - Side List + Fixed Log
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -81,7 +81,7 @@ content.BackgroundTransparency = 1
 content.Parent = main
 
 --========================
--- LEFT PANEL: INPUT + EXECUTE
+-- LEFT PANEL: INPUT + EXECUTE + LOG
 --========================
 local leftPanel = Instance.new("Frame")
 leftPanel.Size = UDim2.new(0.6,0,1,0)
@@ -111,11 +111,11 @@ exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
 exec.Parent = leftPanel
 
 --========================
--- LEFT PANEL: LOG
+-- LEFT PANEL: LOG (scrolling)
 --========================
 local logFrame = Instance.new("ScrollingFrame")
-logFrame.Size = UDim2.new(1,-20,0,180)
-logFrame.Position = UDim2.new(0,10,0,100)
+logFrame.Size = UDim2.new(1,-20,0,200)
+logFrame.Position = UDim2.new(0,10,0,95)
 logFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 logFrame.CanvasSize = UDim2.new(0,0,0,0)
 logFrame.ScrollBarThickness = 6
@@ -151,9 +151,12 @@ listFrame.Parent = content
 local function addLog(text)
 	logLabel.Text ..= text .. "\n"
 	RunService.Heartbeat:Wait()
-	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
+	-- batasi max height log
+	local maxHeight = 200
+	local newHeight = math.min(logLabel.TextBounds.Y, maxHeight)
+	logLabel.Size = UDim2.new(1,0,0,newHeight)
 	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
-	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+	logFrame.CanvasPosition = Vector2.new(0, logLabel.TextBounds.Y)
 	print(text)
 end
 
@@ -199,7 +202,7 @@ local function scanRemotes(folder, prefix)
 			local btn = Instance.new("TextButton")
 			btn.Size = UDim2.new(1,-10,0,24)
 			btn.Position = UDim2.new(0,0,0,(#listFrame:GetChildren()-1)*26)
-			btn.Text = currentPath.." ["..obj.ClassName.."]"
+			btn.Text = currentPath
 			btn.Font = Enum.Font.SourceSans
 			btn.TextSize = 14
 			btn.TextColor3 = Color3.new(1,1,1)
@@ -210,7 +213,6 @@ local function scanRemotes(folder, prefix)
 				input.Text = currentPath
 			end)
 		end
-		-- rekursi untuk folder
 		if #obj:GetChildren() > 0 then
 			scanRemotes(obj, currentPath)
 		end
