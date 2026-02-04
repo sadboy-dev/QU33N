@@ -1,4 +1,4 @@
---// Net Remote Tester - FIXED + LOG BERFUNGSI1
+--// Net Remote Tester - GUI + Delta Log
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,11 +7,18 @@ local Player = Players.LocalPlayer
 --========================
 -- BASE NET PATH
 --========================
-local NetFolder = ReplicatedStorage
-	:WaitForChild("Packages")
-	:WaitForChild("_Index")
-	:WaitForChild("sleitnick_net@0.2.0")
-	:WaitForChild("net")
+local NetFolder
+local success, err = pcall(function()
+    NetFolder = ReplicatedStorage
+        :WaitForChild("Packages")
+        :WaitForChild("_Index")
+        :WaitForChild("sleitnick_net@0.2.0")
+        :WaitForChild("net")
+end)
+
+if not success then
+    warn("[ERROR] Tidak bisa menemukan NetFolder:", err)
+end
 
 --========================
 -- UI SETUP
@@ -135,14 +142,18 @@ logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
 
 --========================
--- HELPER: ADD LOG DENGAN DELAY UNTUK TEXTBUNDS
+-- HELPER: ADD LOG GUI + DELTA
 --========================
 local function addLog(text)
+	-- GUI log
 	logLabel.Text ..= text .. "\n"
 	task.wait() -- tunggu satu frame agar TextBounds diperbarui
 	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+
+	-- Delta log
+	print(text)
 end
 
 --========================
@@ -195,7 +206,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 --========================
--- EXECUTE LOGIC DENGAN FORMAT BARU
+-- EXECUTE LOGIC DENGAN DUAL LOG
 --========================
 exec.MouseButton1Click:Connect(function()
 	local raw = input.Text
@@ -207,6 +218,11 @@ exec.MouseButton1Click:Connect(function()
 	local path, arg = raw:match("([^|]+)|?(.*)")
 	path = path and path:match("^%s*(.-)%s*$")
 	arg = arg and arg:match("^%s*(.-)%s*$")
+
+	if not NetFolder then
+		addLog("[ERROR] NetFolder tidak ditemukan")
+		return
+	end
 
 	-- RESOLVE NESTED PATH
 	local current = NetFolder
@@ -223,17 +239,24 @@ exec.MouseButton1Click:Connect(function()
 		finalArg = tonumber(arg) or arg
 	end
 
-	-- LOG DENGAN FORMAT BARU
+	-- LOG FORMAT BARU
 	addLog("[REMOTE]: "..path)
 	addLog("[PARAMS]: "..tostring(finalArg))
 	addLog("-----------------------------------------")
 
-	if current:IsA("RemoteEvent") then
-		current:FireServer(finalArg)
-	elseif current:IsA("RemoteFunction") then
-		local res = current:InvokeServer(finalArg)
-		addLog("[RECV]: "..tostring(res))
-	else
-		addLog("[ERROR]: Target bukan RemoteEvent / RemoteFunction")
+	-- FIRE OR INVOKE
+	local status, res = pcall(function()
+		if current:IsA("RemoteEvent") then
+			current:FireServer(finalArg)
+		elseif current:IsA("RemoteFunction") then
+			local ret = current:InvokeServer(finalArg)
+			addLog("[RECV]: "..tostring(ret))
+		else
+			addLog("[ERROR]: Target bukan RemoteEvent / RemoteFunction")
+		end
+	end)
+
+	if not status then
+		addLog("[ERROR]: "..tostring(res))
 	end
 end)
