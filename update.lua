@@ -1,191 +1,180 @@
---// Simple Mobile Draggable RemoteEvent Tester UI
---// For Roblox Studio testing/debugging purposes
+--// Mobile Remote Tester UI (FIXED VERSION)
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local RS = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
---========================
--- UI CREATION
---========================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RemoteTesterUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = Player:WaitForChild("PlayerGui")
+--=====================
+-- SCREEN GUI
+--=====================
+local gui = Instance.new("ScreenGui")
+gui.Name = "RemoteTesterUI"
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = Player:WaitForChild("PlayerGui")
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 260, 0, 200)
-Main.Position = UDim2.new(0.5, -130, 0.5, -100)
-Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.BorderSizePixel = 0
-Main.Parent = ScreenGui
+--=====================
+-- MAIN FRAME
+--=====================
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 260, 0, 200)
+main.Position = UDim2.new(0.5, -130, 0.4, 0)
+main.BackgroundColor3 = Color3.fromRGB(30,30,30)
+main.BorderSizePixel = 0
+main.ZIndex = 1
+main.Parent = gui
 
-local Corner = Instance.new("UICorner", Main)
-Corner.CornerRadius = UDim.new(0, 10)
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,10)
+corner.Parent = main
 
--- Header
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 30)
-Header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Header.Parent = Main
+--=====================
+-- HEADER
+--=====================
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1,0,0,32)
+header.BackgroundColor3 = Color3.fromRGB(45,45,45)
+header.BorderSizePixel = 0
+header.ZIndex = 2
+header.Parent = main
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -60, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "Remote Tester"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
-Title.Font = Enum.Font.Gotham
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Left
-Title.Parent = Header
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-70,1,0)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "Remote Tester"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 16
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.ZIndex = 3
+title.Parent = header
 
--- Minimize
-local MinBtn = Instance.new("TextButton")
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(1, -55, 0, 2)
-MinBtn.Text = "-"
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 16
-MinBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-MinBtn.TextColor3 = Color3.new(1,1,1)
-MinBtn.Parent = Header
+-- Minimize Button
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0,26,0,26)
+minBtn.Position = UDim2.new(1,-58,0,3)
+minBtn.Text = "_"
+minBtn.Font = Enum.Font.SourceSansBold
+minBtn.TextSize = 18
+minBtn.TextColor3 = Color3.new(1,1,1)
+minBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+minBtn.ZIndex = 3
+minBtn.Parent = header
 
--- Close
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 25, 0, 25)
-CloseBtn.Position = UDim2.new(1, -28, 0, 2)
-CloseBtn.Text = "X"
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 14
-CloseBtn.BackgroundColor3 = Color3.fromRGB(170, 50, 50)
-CloseBtn.TextColor3 = Color3.new(1,1,1)
-CloseBtn.Parent = Header
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,26,0,26)
+closeBtn.Position = UDim2.new(1,-30,0,3)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 14
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
+closeBtn.ZIndex = 3
+closeBtn.Parent = header
 
--- Input
-local Input = Instance.new("TextBox")
-Input.Size = UDim2.new(1, -20, 0, 35)
-Input.Position = UDim2.new(0, 10, 0, 40)
-Input.PlaceholderText = "ReplicatedStorage.RemoteName"
-Input.Text = ""
-Input.ClearTextOnFocus = false
-Input.TextSize = 13
-Input.Font = Enum.Font.Gotham
-Input.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Input.TextColor3 = Color3.new(1,1,1)
-Input.Parent = Main
+--=====================
+-- INPUT
+--=====================
+local input = Instance.new("TextBox")
+input.Size = UDim2.new(1,-20,0,36)
+input.Position = UDim2.new(0,10,0,45)
+input.PlaceholderText = "ReplicatedStorage.RemoteEvent"
+input.Text = ""
+input.Font = Enum.Font.SourceSans
+input.TextSize = 14
+input.TextColor3 = Color3.new(1,1,1)
+input.BackgroundColor3 = Color3.fromRGB(50,50,50)
+input.ClearTextOnFocus = false
+input.ZIndex = 2
+input.Parent = main
 
--- Execute
-local Execute = Instance.new("TextButton")
-Execute.Size = UDim2.new(1, -20, 0, 30)
-Execute.Position = UDim2.new(0, 10, 0, 80)
-Execute.Text = "EXECUTE"
-Execute.Font = Enum.Font.GothamBold
-Execute.TextSize = 13
-Execute.BackgroundColor3 = Color3.fromRGB(70,120,70)
-Execute.TextColor3 = Color3.new(1,1,1)
-Execute.Parent = Main
+--=====================
+-- EXECUTE BUTTON
+--=====================
+local exec = Instance.new("TextButton")
+exec.Size = UDim2.new(1,-20,0,32)
+exec.Position = UDim2.new(0,10,0,90)
+exec.Text = "EXECUTE"
+exec.Font = Enum.Font.SourceSansBold
+exec.TextSize = 14
+exec.TextColor3 = Color3.new(1,1,1)
+exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
+exec.ZIndex = 2
+exec.Parent = main
 
--- Log Box
-local Log = Instance.new("TextLabel")
-Log.Size = UDim2.new(1, -20, 0, 60)
-Log.Position = UDim2.new(0, 10, 0, 120)
-Log.TextWrapped = true
-Log.TextYAlignment = Top
-Log.TextXAlignment = Left
-Log.TextSize = 11
-Log.Font = Enum.Font.Code
-Log.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Log.TextColor3 = Color3.fromRGB(0,255,0)
-Log.Text = "[SYSTEM] Ready\n"
-Log.Parent = Main
+--=====================
+-- LOG
+--=====================
+local log = Instance.new("TextLabel")
+log.Size = UDim2.new(1,-20,0,60)
+log.Position = UDim2.new(0,10,0,130)
+log.BackgroundColor3 = Color3.fromRGB(20,20,20)
+log.TextColor3 = Color3.fromRGB(0,255,0)
+log.Font = Enum.Font.Code
+log.TextSize = 12
+log.TextWrapped = true
+log.TextYAlignment = Enum.TextYAlignment.Top
+log.TextXAlignment = Enum.TextXAlignment.Left
+log.Text = "[SYSTEM] Ready\n"
+log.ZIndex = 2
+log.Parent = main
 
---========================
--- DRAG SYSTEM (MOBILE + PC)
---========================
-local dragging, dragStart, startPos
+--=====================
+-- DRAG (MOBILE + PC)
+--=====================
+local dragging, startPos, startInput
 
-Header.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+header.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1
+	or i.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
-		dragStart = input.Position
-		startPos = Main.Position
+		startInput = i.Position
+		startPos = main.Position
 	end
 end)
 
-UIS.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		Main.Position = UDim2.new(
+UIS.InputChanged:Connect(function(i)
+	if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
+	or i.UserInputType == Enum.UserInputType.Touch) then
+		local delta = i.Position - startInput
+		main.Position = UDim2.new(
 			startPos.X.Scale, startPos.X.Offset + delta.X,
 			startPos.Y.Scale, startPos.Y.Offset + delta.Y
 		)
 	end
 end)
 
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+UIS.InputEnded:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1
+	or i.UserInputType == Enum.UserInputType.Touch then
 		dragging = false
 	end
 end)
 
---========================
+--=====================
 -- BUTTON LOGIC
---========================
+--=====================
 local minimized = false
 
-MinBtn.MouseButton1Click:Connect(function()
+minBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
-	for _,v in ipairs(Main:GetChildren()) do
-		if v ~= Header then
+	for _,v in ipairs(main:GetChildren()) do
+		if v ~= header then
 			v.Visible = not minimized
 		end
 	end
-	Main.Size = minimized and UDim2.new(0,260,0,30) or UDim2.new(0,260,0,200)
+	main.Size = minimized and UDim2.new(0,260,0,32) or UDim2.new(0,260,0,200)
 end)
 
-CloseBtn.MouseButton1Click:Connect(function()
-	ScreenGui:Destroy()
+closeBtn.MouseButton1Click:Connect(function()
+	gui:Destroy()
 end)
 
---========================
--- EXECUTE FIRE SERVER
---========================
-Execute.MouseButton1Click:Connect(function()
-	local path = Input.Text
-	if path == "" then
-		Log.Text ..= "[ERROR] Path kosong\n"
-		return
-	end
-
-	local success, remote = pcall(function()
-		return loadstring("return game."..path)()
-	end)
-
-	if not success or not remote then
-		Log.Text ..= "[ERROR] Remote tidak ditemukan\n"
-		return
-	end
-
-	if remote:IsA("RemoteEvent") then
-		remote:FireServer()
-		Log.Text ..= "[SEND] FireServer() -> "..path.."\n"
-	elseif remote:IsA("RemoteFunction") then
-		local res = remote:InvokeServer()
-		Log.Text ..= "[RECV] "..tostring(res).."\n"
-	else
-		Log.Text ..= "[ERROR] Bukan RemoteEvent / RemoteFunction\n"
-	end
+--=====================
+-- EXECUTE
+--=====================
+exec.MouseButton1Click:Connect(function()
+	log.Text ..= "[SEND] Execute pressed\n"
 end)
-
---========================
--- OPTIONAL SERVER RESPONSE LISTENER
---========================
-for _,v in ipairs(RS:GetChildren()) do
-	if v:IsA("RemoteEvent") then
-		v.OnClientEvent:Connect(function(...)
-			Log.Text ..= "[SERVER] "..v.Name.." | "..table.concat({...}, ", ").."\n"
-		end)
-	end
-end
