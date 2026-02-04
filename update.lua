@@ -1,7 +1,8 @@
---// Net Remote Tester - GUI + Delta Log
+--// Net Remote Tester - Auto Scan + GUI Log
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
 --========================
@@ -30,8 +31,8 @@ gui.ResetOnSpawn = false
 gui.Parent = Player:WaitForChild("PlayerGui")
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 260, 0, 200)
-main.Position = UDim2.new(0.5, -130, 0.4, 0)
+main.Size = UDim2.new(0, 360, 0, 400)
+main.Position = UDim2.new(0.5, -180, 0.3, 0)
 main.BackgroundColor3 = Color3.fromRGB(30,30,30)
 main.BorderSizePixel = 0
 main.Parent = gui
@@ -61,16 +62,6 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 title.TextYAlignment = Enum.TextYAlignment.Center
 title.Parent = header
 
-local minBtn = Instance.new("TextButton")
-minBtn.Size = UDim2.new(0,26,0,26)
-minBtn.Position = UDim2.new(1,-58,0,3)
-minBtn.Text = "_"
-minBtn.Font = Enum.Font.SourceSansBold
-minBtn.TextSize = 18
-minBtn.TextColor3 = Color3.new(1,1,1)
-minBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
-minBtn.Parent = header
-
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0,26,0,26)
 closeBtn.Position = UDim2.new(1,-30,0,3)
@@ -82,7 +73,7 @@ closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
 closeBtn.Parent = header
 
 --========================
--- CONTENT FRAME
+-- CONTENT
 --========================
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1,0,1,-32)
@@ -96,7 +87,7 @@ content.Parent = main
 local input = Instance.new("TextBox")
 input.Size = UDim2.new(1,-20,0,36)
 input.Position = UDim2.new(0,10,0,10)
-input.PlaceholderText = "RE/EquipToolFromHotbar | 1"
+input.PlaceholderText = "Masukkan path / pilih dari list di bawah"
 input.ClearTextOnFocus = false
 input.Font = Enum.Font.SourceSans
 input.TextSize = 14
@@ -118,10 +109,10 @@ exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
 exec.Parent = content
 
 --========================
--- LOG SCROLLING FRAME
+-- LOG SCROLL FRAME
 --========================
 local logFrame = Instance.new("ScrollingFrame")
-logFrame.Size = UDim2.new(1,-20,0,60)
+logFrame.Size = UDim2.new(1,-20,0,120)
 logFrame.Position = UDim2.new(0,10,0,95)
 logFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 logFrame.CanvasSize = UDim2.new(0,0,0,0)
@@ -142,17 +133,25 @@ logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
 
 --========================
--- HELPER: ADD LOG GUI + DELTA
+-- REMOTE LIST SCROLL FRAME
+--========================
+local listFrame = Instance.new("ScrollingFrame")
+listFrame.Size = UDim2.new(1,-20,0,150)
+listFrame.Position = UDim2.new(0,10,0,230)
+listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+listFrame.CanvasSize = UDim2.new(0,0,0,0)
+listFrame.ScrollBarThickness = 6
+listFrame.Parent = content
+
+--========================
+-- HELPER: LOG FUNCTION
 --========================
 local function addLog(text)
-	-- GUI log
 	logLabel.Text ..= text .. "\n"
-	task.wait() -- tunggu satu frame agar TextBounds diperbarui
+	RunService.Heartbeat:Wait()
 	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
 	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
-
-	-- Delta log
 	print(text)
 end
 
@@ -161,44 +160,23 @@ end
 --========================
 local dragging = false
 local dragStart, startPos
-
 header.InputBegan:Connect(function(i)
-	if i.UserInputType == Enum.UserInputType.MouseButton1
-	or i.UserInputType == Enum.UserInputType.Touch then
+	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
 		dragStart = i.Position
 		startPos = main.Position
 	end
 end)
-
 UIS.InputChanged:Connect(function(i)
-	if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-	or i.UserInputType == Enum.UserInputType.Touch) then
+	if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
 		local delta = i.Position - dragStart
-		main.Position = UDim2.new(
-			startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y
-		)
+		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end)
-
 UIS.InputEnded:Connect(function(i)
-	if i.UserInputType == Enum.UserInputType.MouseButton1
-	or i.UserInputType == Enum.UserInputType.Touch then
+	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 		dragging = false
 	end
-end)
-
---========================
--- BUTTON LOGIC MINIMIZE & CLOSE
---========================
-local minimized = false
-minBtn.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	content.Visible = not minimized
-	main.Size = minimized
-		and UDim2.new(0,260,0,32)
-		or UDim2.new(0,260,0,200)
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -206,7 +184,40 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 --========================
--- EXECUTE LOGIC DENGAN DUAL LOG
+-- SCAN REMOTES
+--========================
+local function scanRemotes(folder, prefix)
+	prefix = prefix or ""
+	for _, obj in ipairs(folder:GetDescendants()) do
+		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+			local path = prefix .. obj.Name
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, -10, 0, 24)
+			btn.Position = UDim2.new(0, 0, 0, (#listFrame:GetChildren()-1) * 26)
+			btn.Text = path.." ["..obj.ClassName.."]"
+			btn.Font = Enum.Font.SourceSans
+			btn.TextSize = 14
+			btn.TextColor3 = Color3.new(1,1,1)
+			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+			btn.Parent = listFrame
+
+			btn.MouseButton1Click:Connect(function()
+				input.Text = path
+			end)
+		end
+	end
+	RunService.Heartbeat:Wait()
+	listFrame.CanvasSize = UDim2.new(0,0,0,(#listFrame:GetChildren()-1) * 26)
+end
+
+if NetFolder then
+	addLog("[SYSTEM] Scan RemoteEvents/Functions...")
+	scanRemotes(NetFolder)
+	addLog("[SYSTEM] Scan selesai!")
+end
+
+--========================
+-- EXECUTE LOGIC
 --========================
 exec.MouseButton1Click:Connect(function()
 	local raw = input.Text
@@ -224,7 +235,7 @@ exec.MouseButton1Click:Connect(function()
 		return
 	end
 
-	-- RESOLVE NESTED PATH
+	-- RESOLVE PATH
 	local current = NetFolder
 	for part in string.gmatch(path, "[^/]+") do
 		current = current:FindFirstChild(part)
@@ -239,12 +250,10 @@ exec.MouseButton1Click:Connect(function()
 		finalArg = tonumber(arg) or arg
 	end
 
-	-- LOG FORMAT BARU
 	addLog("[REMOTE]: "..path)
 	addLog("[PARAMS]: "..tostring(finalArg))
 	addLog("-----------------------------------------")
 
-	-- FIRE OR INVOKE
 	local status, res = pcall(function()
 		if current:IsA("RemoteEvent") then
 			current:FireServer(finalArg)
