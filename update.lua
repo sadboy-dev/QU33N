@@ -1,4 +1,4 @@
---// Net Remote Tester - Auto Scan + GUI Log
+--// Net Remote Tester - Side List + Full Path
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,7 +16,6 @@ local success, err = pcall(function()
         :WaitForChild("sleitnick_net@0.2.0")
         :WaitForChild("net")
 end)
-
 if not success then
     warn("[ERROR] Tidak bisa menemukan NetFolder:", err)
 end
@@ -31,8 +30,8 @@ gui.ResetOnSpawn = false
 gui.Parent = Player:WaitForChild("PlayerGui")
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 360, 0, 400)
-main.Position = UDim2.new(0.5, -180, 0.3, 0)
+main.Size = UDim2.new(0, 400, 0, 300)
+main.Position = UDim2.new(0.5, -200, 0.3, 0)
 main.BackgroundColor3 = Color3.fromRGB(30,30,30)
 main.BorderSizePixel = 0
 main.Parent = gui
@@ -51,7 +50,7 @@ header.BorderSizePixel = 0
 header.Parent = main
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,-70,1,0)
+title.Size = UDim2.new(1,-30,1,0)
 title.Position = UDim2.new(0,10,0,0)
 title.Text = "Net Remote Tester"
 title.Font = Enum.Font.SourceSansBold
@@ -82,22 +81,25 @@ content.BackgroundTransparency = 1
 content.Parent = main
 
 --========================
--- INPUT
+-- LEFT PANEL: INPUT + EXECUTE
 --========================
+local leftPanel = Instance.new("Frame")
+leftPanel.Size = UDim2.new(0.6,0,1,0)
+leftPanel.Position = UDim2.new(0,0,0,0)
+leftPanel.BackgroundTransparency = 1
+leftPanel.Parent = content
+
 local input = Instance.new("TextBox")
 input.Size = UDim2.new(1,-20,0,36)
 input.Position = UDim2.new(0,10,0,10)
-input.PlaceholderText = "Masukkan path / pilih dari list di bawah"
+input.PlaceholderText = "Masukkan path / klik list"
 input.ClearTextOnFocus = false
 input.Font = Enum.Font.SourceSans
 input.TextSize = 14
 input.TextColor3 = Color3.new(1,1,1)
 input.BackgroundColor3 = Color3.fromRGB(50,50,50)
-input.Parent = content
+input.Parent = leftPanel
 
---========================
--- EXECUTE BUTTON
---========================
 local exec = Instance.new("TextButton")
 exec.Size = UDim2.new(1,-20,0,32)
 exec.Position = UDim2.new(0,10,0,55)
@@ -106,18 +108,18 @@ exec.Font = Enum.Font.SourceSansBold
 exec.TextSize = 14
 exec.TextColor3 = Color3.new(1,1,1)
 exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
-exec.Parent = content
+exec.Parent = leftPanel
 
 --========================
--- LOG SCROLL FRAME
+-- LEFT PANEL: LOG
 --========================
 local logFrame = Instance.new("ScrollingFrame")
-logFrame.Size = UDim2.new(1,-20,0,120)
-logFrame.Position = UDim2.new(0,10,0,95)
+logFrame.Size = UDim2.new(1,-20,0,180)
+logFrame.Position = UDim2.new(0,10,0,100)
 logFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 logFrame.CanvasSize = UDim2.new(0,0,0,0)
 logFrame.ScrollBarThickness = 6
-logFrame.Parent = content
+logFrame.Parent = leftPanel
 
 local logLabel = Instance.new("TextLabel")
 logLabel.Size = UDim2.new(1,0,0,0)
@@ -133,18 +135,18 @@ logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
 
 --========================
--- REMOTE LIST SCROLL FRAME
+-- RIGHT PANEL: LIST REMOTE
 --========================
 local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(1,-20,0,150)
-listFrame.Position = UDim2.new(0,10,0,230)
+listFrame.Size = UDim2.new(0.4, -10, 1, -10)
+listFrame.Position = UDim2.new(0.6, 5, 0, 5)
 listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 listFrame.CanvasSize = UDim2.new(0,0,0,0)
 listFrame.ScrollBarThickness = 6
 listFrame.Parent = content
 
 --========================
--- HELPER: LOG FUNCTION
+-- HELPER LOG
 --========================
 local function addLog(text)
 	logLabel.Text ..= text .. "\n"
@@ -186,15 +188,18 @@ end)
 --========================
 -- SCAN REMOTES
 --========================
+local remotePaths = {} -- simpan full path
 local function scanRemotes(folder, prefix)
 	prefix = prefix or ""
-	for _, obj in ipairs(folder:GetDescendants()) do
+	for _, obj in ipairs(folder:GetChildren()) do
+		local currentPath = prefix ~= "" and (prefix.."/"..obj.Name) or obj.Name
 		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-			local path = prefix .. obj.Name
+			table.insert(remotePaths, currentPath)
+
 			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, -10, 0, 24)
-			btn.Position = UDim2.new(0, 0, 0, (#listFrame:GetChildren()-1) * 26)
-			btn.Text = path.." ["..obj.ClassName.."]"
+			btn.Size = UDim2.new(1,-10,0,24)
+			btn.Position = UDim2.new(0,0,0,(#listFrame:GetChildren()-1)*26)
+			btn.Text = currentPath.." ["..obj.ClassName.."]"
 			btn.Font = Enum.Font.SourceSans
 			btn.TextSize = 14
 			btn.TextColor3 = Color3.new(1,1,1)
@@ -202,18 +207,36 @@ local function scanRemotes(folder, prefix)
 			btn.Parent = listFrame
 
 			btn.MouseButton1Click:Connect(function()
-				input.Text = path
+				input.Text = currentPath
 			end)
+		end
+		-- rekursi untuk folder
+		if #obj:GetChildren() > 0 then
+			scanRemotes(obj, currentPath)
 		end
 	end
 	RunService.Heartbeat:Wait()
-	listFrame.CanvasSize = UDim2.new(0,0,0,(#listFrame:GetChildren()-1) * 26)
+	listFrame.CanvasSize = UDim2.new(0,0,0,(#listFrame:GetChildren()-1)*26)
 end
 
 if NetFolder then
 	addLog("[SYSTEM] Scan RemoteEvents/Functions...")
 	scanRemotes(NetFolder)
 	addLog("[SYSTEM] Scan selesai!")
+end
+
+--========================
+-- RESOLVE PATH
+--========================
+local function resolvePath(folder, fullPath)
+	local current = folder
+	for part in string.gmatch(fullPath, "[^/]+") do
+		current = current:FindFirstChild(part)
+		if not current then
+			return nil
+		end
+	end
+	return current
 end
 
 --========================
@@ -235,14 +258,10 @@ exec.MouseButton1Click:Connect(function()
 		return
 	end
 
-	-- RESOLVE PATH
-	local current = NetFolder
-	for part in string.gmatch(path, "[^/]+") do
-		current = current:FindFirstChild(part)
-		if not current then
-			addLog("[ERROR] Path tidak valid: "..path)
-			return
-		end
+	local current = resolvePath(NetFolder, path)
+	if not current then
+		addLog("[ERROR] Path tidak valid: "..path)
+		return
 	end
 
 	local finalArg
@@ -264,7 +283,6 @@ exec.MouseButton1Click:Connect(function()
 			addLog("[ERROR]: Target bukan RemoteEvent / RemoteFunction")
 		end
 	end)
-
 	if not status then
 		addLog("[ERROR]: "..tostring(res))
 	end
