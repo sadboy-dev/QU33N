@@ -1,4 +1,4 @@
---// Net Remote Tester - FINAL FIX + AUTO SCROLL
+--// Net Remote Tester - DELTA MOBILE STABLE
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,13 +8,37 @@ local Player = Players.LocalPlayer
 -- BASE NET PATH
 --========================
 local NetFolder = ReplicatedStorage
-	:WaitForChild("Packages")
-	:WaitForChild("_Index")
-	:WaitForChild("sleitnick_net@0.2.0")
-	:WaitForChild("net")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
 
 --========================
--- UI SETUP
+-- LOGGING SETUP
+--========================
+local FOLDER = "DeltaLogs"
+local FILE = FOLDER .. "/BaitCastLog.txt"
+
+if makefolder and not isfolder(FOLDER) then
+    makefolder(FOLDER)
+end
+if writefile and not isfile(FILE) then
+    writefile(FILE, "=== BAIT CAST LOG ===\n")
+end
+
+local function save(txt)
+    if appendfile then
+        appendfile(FILE, txt .. "\n")
+    end
+end
+
+local function log(txt)
+    print("[NET] " .. txt)
+    save("[NET] " .. txt)
+    addLog("[NET] " .. txt)
+end
+
+--========================
+-- GUI SETUP
 --========================
 local gui = Instance.new("ScreenGui")
 gui.Name = "NetRemoteTester"
@@ -33,9 +57,7 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0,10)
 corner.Parent = main
 
---========================
 -- HEADER
---========================
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1,0,0,32)
 header.BackgroundColor3 = Color3.fromRGB(45,45,45)
@@ -74,18 +96,14 @@ closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
 closeBtn.Parent = header
 
---========================
--- CONTENT FRAME
---========================
+-- CONTENT
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1,0,1,-32)
 content.Position = UDim2.new(0,0,0,32)
 content.BackgroundTransparency = 1
 content.Parent = main
 
---========================
 -- INPUT
---========================
 local input = Instance.new("TextBox")
 input.Size = UDim2.new(1,-20,0,36)
 input.Position = UDim2.new(0,10,0,10)
@@ -97,9 +115,7 @@ input.TextColor3 = Color3.new(1,1,1)
 input.BackgroundColor3 = Color3.fromRGB(50,50,50)
 input.Parent = content
 
---========================
--- EXECUTE
---========================
+-- EXECUTE BUTTON
 local exec = Instance.new("TextButton")
 exec.Size = UDim2.new(1,-20,0,32)
 exec.Position = UDim2.new(0,10,0,55)
@@ -110,9 +126,7 @@ exec.TextColor3 = Color3.new(1,1,1)
 exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
 exec.Parent = content
 
---========================
--- LOG SCROLLING FRAME
---========================
+-- LOG FRAME
 local logFrame = Instance.new("ScrollingFrame")
 logFrame.Size = UDim2.new(1,-20,0,60)
 logFrame.Position = UDim2.new(0,10,0,95)
@@ -133,6 +147,13 @@ logLabel.TextYAlignment = Enum.TextYAlignment.Top
 logLabel.TextWrapped = true
 logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
+
+local function addLog(text)
+    logLabel.Text ..= text .. "\n"
+    logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
+    logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
+    logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+end
 
 --========================
 -- DRAG SUPPORT
@@ -167,11 +188,8 @@ UIS.InputEnded:Connect(function(i)
 	end
 end)
 
---========================
--- BUTTON LOGIC
---========================
+-- MINIMIZE / CLOSE BUTTONS
 local minimized = false
-
 minBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	content.Visible = not minimized
@@ -185,16 +203,40 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 --========================
--- HELPER: ADD LOG
-local function addLog(text)
-	logLabel.Text ..= text .. "\n"
-	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
-	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
-	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+-- REMOTE SCAN & LISTENER
+--========================
+log("Scanning RemoteEvents (partial match)...")
+local foundAny = false
+
+for _, r in ipairs(ReplicatedStorage:GetDescendants()) do
+	if r:IsA("RemoteEvent") then
+		local lname = r.Name:lower()
+		local full = r:GetFullName():lower()
+
+		if lname:find("bait") or lname:find("cast") or full:find("baitcast") then
+			foundAny = true
+			log("FOUND REMOTE: "..r:GetFullName())
+
+			r.OnClientEvent:Connect(function(...)
+				local args = {...}
+				if args[1] == Player then
+					log("REMOTE FIRED by LocalPlayer -> "..r.Name)
+				else
+					log("REMOTE FIRED -> "..r.Name)
+				end
+			end)
+		end
+	end
+end
+
+if not foundAny then
+	log("NO BAIT/CAST RELATED REMOTE FOUND")
+else
+	log("Waiting for cast...")
 end
 
 --========================
--- EXECUTE LOGIC
+-- EXECUTE BUTTON LOGIC
 --========================
 exec.MouseButton1Click:Connect(function()
 	local raw = input.Text
