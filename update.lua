@@ -1,4 +1,4 @@
---// Net Remote Tester - FINAL FIX + AUTO SCROLL
+--// Net Remote Tester - FINAL FIX + LOG FORMAT
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -98,7 +98,7 @@ input.BackgroundColor3 = Color3.fromRGB(50,50,50)
 input.Parent = content
 
 --========================
--- EXECUTE
+-- EXECUTE BUTTON
 --========================
 local exec = Instance.new("TextButton")
 exec.Size = UDim2.new(1,-20,0,32)
@@ -133,6 +133,13 @@ logLabel.TextYAlignment = Enum.TextYAlignment.Top
 logLabel.TextWrapped = true
 logLabel.Text = "[SYSTEM] Ready\n"
 logLabel.Parent = logFrame
+
+local function addLog(text)
+	logLabel.Text ..= text .. "\n"
+	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
+	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
+	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+end
 
 --========================
 -- DRAG SUPPORT
@@ -171,7 +178,6 @@ end)
 -- BUTTON LOGIC
 --========================
 local minimized = false
-
 minBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	content.Visible = not minimized
@@ -185,16 +191,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 --========================
--- HELPER: ADD LOG
-local function addLog(text)
-	logLabel.Text ..= text .. "\n"
-	logLabel.Size = UDim2.new(1,0,0,logLabel.TextBounds.Y)
-	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
-	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
-end
-
---========================
--- EXECUTE LOGIC
+-- EXECUTE LOGIC DENGAN FORMAT BARU
 --========================
 exec.MouseButton1Click:Connect(function()
 	local raw = input.Text
@@ -222,13 +219,17 @@ exec.MouseButton1Click:Connect(function()
 		finalArg = tonumber(arg) or arg
 	end
 
+	-- LOG DENGAN FORMAT YANG DIMINTA
+	addLog("[REMOTE]: "..path)
+	addLog("[PARAMS]: "..tostring(finalArg))
+	addLog("-----------------------------------------")
+
 	if current:IsA("RemoteEvent") then
 		current:FireServer(finalArg)
-		addLog("[SEND] FireServer -> "..path.." ("..tostring(finalArg)..")")
 	elseif current:IsA("RemoteFunction") then
 		local res = current:InvokeServer(finalArg)
-		addLog("[RECV] "..tostring(res))
+		addLog("[RECV]: "..tostring(res))
 	else
-		addLog("[ERROR] Target bukan RemoteEvent / RemoteFunction")
+		addLog("[ERROR]: Target bukan RemoteEvent / RemoteFunction")
 	end
 end)
