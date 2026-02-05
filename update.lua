@@ -1,204 +1,239 @@
+--// SERVICES
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Player = Players.LocalPlayer
+local LP = Players.LocalPlayer
 
--- NET FOLDER
-local NetFolder = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
+--// STATE
+local RemoteMap = {}
+local LastRemoteName = nil
 
--- SIMPAN REFERENCE REMOTE
-local RemoteRefs = {}
-
--- UI
+--// GUI ROOT
 local gui = Instance.new("ScreenGui")
 gui.Name = "NetRemoteTester"
-gui.Parent = Player:WaitForChild("PlayerGui")
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = LP:WaitForChild("PlayerGui")
 
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 420, 0, 220)
-main.Position = UDim2.new(0.5, -210, 0.3, 0)
-main.BackgroundColor3 = Color3.fromRGB(30,30,30)
-main.BorderSizePixel = 0
-main.Parent = gui
+--// MAIN (WIDTH ↓ HEIGHT ↑)
+local main = Instance.new("Frame", gui)
+main.AnchorPoint = Vector2.new(0.5,0.5)
+main.Position = UDim2.fromScale(0.5,0.5)
+main.Size = UDim2.fromScale(0.72,0.65) -- ⬅️ FIX DI SINI
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.Active = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
 
--- HEADER
-local header = Instance.new("Frame")
-header.Size = UDim2.new(1,0,0,32)
-header.BackgroundColor3 = Color3.fromRGB(45,45,45)
-header.Parent = main
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,-30,1,0)
-title.Position = UDim2.new(0,10,0,0)
-title.Text = "Net Remote Tester"
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 16
-title.TextColor3 = Color3.new(1,1,1)
+--// TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,-50,0,42)
+title.Position = UDim2.new(0,15,0,0)
 title.BackgroundTransparency = 1
+title.Text = "Net Remote Tester"
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(235,235,235)
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.TextYAlignment = Enum.TextYAlignment.Center
-title.Parent = header
 
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0,26,0,26)
-closeBtn.Position = UDim2.new(1,-30,0,3)
-closeBtn.Text = "X"
-closeBtn.Font = Enum.Font.SourceSansBold
-closeBtn.TextSize = 14
-closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
-closeBtn.Parent = header
-closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+--// CLOSE
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,32,0,32)
+close.Position = UDim2.new(1,-38,0,5)
+close.Text = "✕"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 14
+close.TextColor3 = Color3.fromRGB(255,255,255)
+close.BackgroundColor3 = Color3.fromRGB(160,60,60)
+Instance.new("UICorner", close).CornerRadius = UDim.new(0,8)
+close.MouseButton1Click:Connect(function()
+	gui.Enabled = false
+end)
 
--- CONTENT LEFT (input + execute + log)
-local content = Instance.new("Frame")
-content.Size = UDim2.new(1,-130,1,-32)
-content.Position = UDim2.new(0,0,0,32)
-content.BackgroundTransparency = 1
-content.Parent = main
+--// BODY
+local body = Instance.new("Frame", main)
+body.Position = UDim2.new(0,10,0,48)
+body.Size = UDim2.new(1,-20,1,-58)
+body.BackgroundTransparency = 1
 
-local input = Instance.new("TextBox")
-input.Size = UDim2.new(1,-20,0,36)
+--// LEFT PANEL
+local left = Instance.new("Frame", body)
+left.Size = UDim2.new(0.5,-5,1,0)
+left.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", left).CornerRadius = UDim.new(0,10)
+
+--// RIGHT PANEL
+local right = Instance.new("Frame", body)
+right.Position = UDim2.new(0.5,5,0,0)
+right.Size = UDim2.new(0.5,-5,1,0)
+right.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", right).CornerRadius = UDim.new(0,10)
+
+--// INPUT
+local input = Instance.new("TextBox", left)
+input.PlaceholderText = "RemoteName | arg1 | arg2"
+input.Size = UDim2.new(1,-20,0,40)
 input.Position = UDim2.new(0,10,0,10)
-input.PlaceholderText = "Masukkan argumen (contoh: 1)"
-input.ClearTextOnFocus = false
-input.Font = Enum.Font.SourceSans
+input.BackgroundColor3 = Color3.fromRGB(40,40,40)
+input.TextColor3 = Color3.fromRGB(235,235,235)
+input.Font = Enum.Font.Gotham
 input.TextSize = 14
-input.TextColor3 = Color3.new(1,1,1)
-input.BackgroundColor3 = Color3.fromRGB(50,50,50)
-input.Parent = content
+input.TextXAlignment = Enum.TextXAlignment.Left
+input.ClearTextOnFocus = false
+Instance.new("UICorner", input).CornerRadius = UDim.new(0,8)
 
-local exec = Instance.new("TextButton")
-exec.Size = UDim2.new(1,-20,0,32)
-exec.Position = UDim2.new(0,10,0,55)
+--// EXEC
+local exec = Instance.new("TextButton", left)
+exec.Size = UDim2.new(1,-20,0,42)
+exec.Position = UDim2.new(0,10,0,60)
 exec.Text = "EXECUTE"
-exec.Font = Enum.Font.SourceSansBold
+exec.Font = Enum.Font.GothamBold
 exec.TextSize = 14
-exec.TextColor3 = Color3.new(1,1,1)
-exec.BackgroundColor3 = Color3.fromRGB(70,140,90)
-exec.Parent = content
+exec.TextColor3 = Color3.fromRGB(255,255,255)
+exec.BackgroundColor3 = Color3.fromRGB(70,150,90)
+Instance.new("UICorner", exec).CornerRadius = UDim.new(0,8)
 
--- LOG
-local logFrame = Instance.new("ScrollingFrame")
-logFrame.Size = UDim2.new(1,-20,0,110)
-logFrame.Position = UDim2.new(0,10,0,95)
-logFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-logFrame.ScrollBarThickness = 6
+--// LOG
+local logFrame = Instance.new("ScrollingFrame", left)
+logFrame.Position = UDim2.new(0,10,0,110)
+logFrame.Size = UDim2.new(1,-20,1,-120)
+logFrame.ScrollBarThickness = 4
 logFrame.CanvasSize = UDim2.new(0,0,0,0)
-logFrame.Parent = content
+logFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+Instance.new("UICorner", logFrame).CornerRadius = UDim.new(0,8)
 
-local logLabel = Instance.new("TextLabel")
-logLabel.Size = UDim2.new(1,0,0,0)
-logLabel.BackgroundTransparency = 1
-logLabel.TextColor3 = Color3.fromRGB(0,255,0)
-logLabel.Font = Enum.Font.Code
-logLabel.TextSize = 12
+local logLabel = Instance.new("TextLabel", logFrame)
+logLabel.Position = UDim2.new(0,5,0,5)
+logLabel.Size = UDim2.new(1,-10,0,0)
+logLabel.TextWrapped = true
 logLabel.TextXAlignment = Enum.TextXAlignment.Left
 logLabel.TextYAlignment = Enum.TextYAlignment.Top
-logLabel.TextWrapped = true
-logLabel.Text = "[SYSTEM] Ready\n"
-logLabel.Parent = logFrame
+logLabel.Font = Enum.Font.Code
+logLabel.TextSize = 13
+logLabel.TextColor3 = Color3.fromRGB(0,255,0)
+logLabel.BackgroundTransparency = 1
+logLabel.Text = "[SYSTEM] Ready"
 
-local function addLog(text)
-	print(text)
-	logLabel.Text ..= text .. "\n"
-	-- batasi tinggi log
-	local maxHeight = 110
-	local textHeight = math.min(logLabel.TextBounds.Y, maxHeight)
-	logLabel.Size = UDim2.new(1,0,0,textHeight)
-	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.TextBounds.Y)
-	logFrame.CanvasPosition = Vector2.new(0,logLabel.TextBounds.Y)
+local function logPrint(msg)
+	logLabel.Text ..= "\n"..msg
+	task.wait()
+	logLabel.Size = UDim2.new(1,-10,0,logLabel.TextBounds.Y+5)
+	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.AbsoluteSize.Y+10)
+	logFrame.CanvasPosition = Vector2.new(
+		0,
+		math.max(0,logFrame.CanvasSize.Y.Offset - logFrame.AbsoluteWindowSize.Y)
+	)
 end
 
--- LIST REMOTE DI KANAN
-local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(0,120,1,-10) -- batasi supaya tidak menimpa close
-listFrame.Position = UDim2.new(1,-125,0,5)
-listFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-listFrame.ScrollBarThickness = 6
-listFrame.CanvasSize = UDim2.new(0,0,0,0)
-listFrame.Parent = main
+--// REMOTE LIST
+local list = Instance.new("ScrollingFrame", right)
+list.Size = UDim2.new(1,-10,1,-10)
+list.Position = UDim2.new(0,5,0,5)
+list.ScrollBarThickness = 4
+list.CanvasSize = UDim2.new(0,0,0,0)
+list.BackgroundTransparency = 1
 
-local function scanRemotes(folder)
-	local y = 0
-	for _, obj in ipairs(folder:GetChildren()) do
-		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1,-4,0,24)
-			btn.Position = UDim2.new(0,2,0,y)
-			btn.Text = obj.Name
-			btn.Font = Enum.Font.SourceSans
-			btn.TextSize = 14
-			btn.TextColor3 = Color3.new(1,1,1)
-			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-			btn.Parent = listFrame
+local layout = Instance.new("UIListLayout", list)
+layout.Padding = UDim.new(0,6)
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+10)
+end)
 
-			RemoteRefs[obj.Name] = obj
+--// ADD REMOTE (RESET ARGS SAAT GANTI REMOTE)
+local function addRemote(remote)
+	RemoteMap[remote.Name] = remote
 
-			btn.MouseButton1Click:Connect(function()
-				input.Text = obj.Name
-			end)
-			y = y + 26
+	local btn = Instance.new("TextButton", list)
+	btn.Size = UDim2.new(1,0,0,36)
+	btn.Text = remote.Name
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 13
+	btn.TextXAlignment = Enum.TextXAlignment.Left
+	btn.TextColor3 = Color3.fromRGB(230,230,230)
+	btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+	btn.MouseButton1Click:Connect(function()
+		if LastRemoteName ~= remote.Name then
+			input.Text = remote.Name
+			LastRemoteName = remote.Name
 		end
-		if #obj:GetChildren() > 0 then
-			scanRemotes(obj)
-		end
+		logPrint("[SELECTED] "..remote.Name)
+	end)
+end
+
+--// LOAD REMOTES
+for _,v in ipairs(ReplicatedStorage:GetDescendants()) do
+	if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+		addRemote(v)
 	end
-	listFrame.CanvasSize = UDim2.new(0,0,y)
 end
+logPrint("[SYSTEM] Remotes loaded")
 
-scanRemotes(NetFolder)
-addLog("[SYSTEM] Remote list siap")
-
--- EXECUTE
+--// EXECUTE
 exec.MouseButton1Click:Connect(function()
-	local name = input.Text
-	local target = RemoteRefs[name]
-	if not target then
-		addLog("[ERROR] Remote tidak valid: "..tostring(name))
+	if input.Text == "" then
+		logPrint("[ERROR] Input kosong")
 		return
 	end
-	local arg = 1
-	addLog("[REMOTE]: "..target.Name)
-	addLog("[PARAMS]: "..tostring(arg))
-	addLog("-----------------------------------------")
-	pcall(function()
-		if target:IsA("RemoteEvent") then
-			target:FireServer(arg)
-		elseif target:IsA("RemoteFunction") then
-			local res = target:InvokeServer(arg)
-			addLog("[RECV]: "..tostring(res))
+
+	local parts = {}
+	for p in string.gmatch(input.Text,"[^|]+") do
+		p = p:gsub("^%s+",""):gsub("%s+$","")
+		table.insert(parts,p)
+	end
+
+	local name = parts[1]
+	local remote = RemoteMap[name]
+	if not remote then
+		logPrint("[ERROR] Remote not found: "..name)
+		return
+	end
+
+	local args = {}
+	for i=2,#parts do
+		local v = parts[i]
+		if v=="true" then v=true
+		elseif v=="false" then v=false
+		else
+			local n = tonumber(v)
+			if n~=nil then v=n end
 		end
-	end)
+		table.insert(args,v)
+	end
+
+	if remote:IsA("RemoteEvent") then
+		remote:FireServer(unpack(args))
+		logPrint("[FIRE] "..name.." ("..#args.." args)")
+	else
+		local res = remote:InvokeServer(unpack(args))
+		logPrint("[INVOKE] "..name.." ("..#args.." args) -> "..tostring(res))
+	end
 end)
 
--- DRAG
-local dragging = false
-local dragStart, startPos
-header.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = main.Position
-	end
-end)
-UIS.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-	or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		main.Position = UDim2.new(
-			startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y
-		)
-	end
-end)
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
+--// DRAG (PC + MOBILE)
+do
+	local dragging, startPos, startInput
+	main.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1
+		or i.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			startInput = i.Position
+			startPos = main.Position
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(i)
+		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
+		or i.UserInputType == Enum.UserInputType.Touch) then
+			local d = i.Position - startInput
+			main.Position = UDim2.new(
+				startPos.X.Scale, startPos.X.Offset + d.X,
+				startPos.Y.Scale, startPos.Y.Offset + d.Y
+			)
+		end
+	end)
+
+	UIS.InputEnded:Connect(function()
 		dragging = false
-	end
-end)
+	end)
+end
