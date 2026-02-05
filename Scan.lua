@@ -48,10 +48,10 @@ log("Total hooked remotes:", #Found)
 -- FISHING HEURISTIC
 -- ===============================
 for _, r in ipairs(Found) do
-    if r.Name:lower():find("bait") then
+    if r.Name:lower():find("Fishing") then
         r.OnClientEvent:Connect(function(player, bait, pos)
             if player == LocalPlayer then
-                log("Bait detected:", bait, pos)
+                log("Fishing detected:", bait, pos)
             end
         end)
     end
