@@ -211,10 +211,10 @@ exec.MouseButton1Click:Connect(function()
 		table.insert(args,v)
 	end
 	local prefix = remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]"
-	logPrint(prefix..": "...remote)
+	logPrint(prefix..": "...remote.Name)
 	if #args > 0 then
 		for i,v in ipairs(args) do
-			logPrint("[args]: "...i...""...tostring(v))
+			logPrint("[args"..i.."]: "..tostring(v))
 		end
 	end
 	logPrint("------------------------------")
@@ -222,7 +222,7 @@ exec.MouseButton1Click:Connect(function()
 		remote:FireServer(unpack(args))
 	else
 		local res = remote:InvokeServer(unpack(args))
-		logPrint("[Return]: "...tostring(res))
+		logPrint("[Return]: "..tostring(res))
 		logPrint("------------------------------")
 	end
 --	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]")..""..parts[1])
