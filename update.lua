@@ -211,7 +211,7 @@ exec.MouseButton1Click:Connect(function()
 		table.insert(args,v)
 	end
 	local prefix = remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]"
-	logPrint(prefix..": "...remote.Name)
+	logPrint(prefix..": "..remote.Name)
 	if #args > 0 then
 		for i,v in ipairs(args) do
 			logPrint("[args"..i.."]: "..tostring(v))
