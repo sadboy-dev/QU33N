@@ -166,7 +166,7 @@ local function addRemote(remote)
 
 	btn.MouseButton1Click:Connect(function()
 		input.Text = remote.Name
-		logPrint("[SELECTED] RE/"..remote.Name)
+	--	logPrint("[SELECTED] RE/"..remote.Name)
 	end)
 end
 
