@@ -191,13 +191,17 @@ exec.MouseButton1Click:Connect(function()
 		table.insert(parts,p)
 	end
 
+	
+	local name =  parts[1]
+	print(name)
 	local remote = RemoteMap[parts[1]]
+	print(remote)
 	if not remote then
 		logPrint("[ERROR] Remote not found")
 		return
 	end
 
-	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]").." RE/"..parts[1])
+	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]")..""..parts[1])
 end)
 
 --// MINIMIZE
