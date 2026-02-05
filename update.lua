@@ -15,11 +15,11 @@ gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.Parent = LP:WaitForChild("PlayerGui")
 
---// MAIN (WIDTH ↓ HEIGHT ↑)
+--// MAIN FRAME (HP FRIENDLY)
 local main = Instance.new("Frame", gui)
 main.AnchorPoint = Vector2.new(0.5,0.5)
 main.Position = UDim2.fromScale(0.5,0.5)
-main.Size = UDim2.fromScale(0.72,0.65) -- ⬅️ FIX DI SINI
+main.Size = UDim2.fromScale(0.66,0.68)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
@@ -35,7 +35,7 @@ title.TextSize = 16
 title.TextColor3 = Color3.fromRGB(235,235,235)
 title.TextXAlignment = Enum.TextXAlignment.Left
 
---// CLOSE
+--// CLOSE BUTTON
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,32,0,32)
 close.Position = UDim2.new(1,-38,0,5)
@@ -81,7 +81,7 @@ input.TextXAlignment = Enum.TextXAlignment.Left
 input.ClearTextOnFocus = false
 Instance.new("UICorner", input).CornerRadius = UDim.new(0,8)
 
---// EXEC
+--// EXECUTE BUTTON
 local exec = Instance.new("TextButton", left)
 exec.Size = UDim2.new(1,-20,0,42)
 exec.Position = UDim2.new(0,10,0,60)
@@ -92,7 +92,7 @@ exec.TextColor3 = Color3.fromRGB(255,255,255)
 exec.BackgroundColor3 = Color3.fromRGB(70,150,90)
 Instance.new("UICorner", exec).CornerRadius = UDim.new(0,8)
 
---// LOG
+--// LOG FRAME
 local logFrame = Instance.new("ScrollingFrame", left)
 logFrame.Position = UDim2.new(0,10,0,110)
 logFrame.Size = UDim2.new(1,-20,1,-120)
@@ -113,11 +113,11 @@ logLabel.TextColor3 = Color3.fromRGB(0,255,0)
 logLabel.BackgroundTransparency = 1
 logLabel.Text = "[SYSTEM] Ready"
 
+--// LOG FUNCTION (AUTO SCROLL)
 local function logPrint(msg)
-	logLabel.Text ..= "\n"..msg
-	task.wait()
-	logLabel.Size = UDim2.new(1,-10,0,logLabel.TextBounds.Y+5)
-	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.AbsoluteSize.Y+10)
+	logLabel.Text = logLabel.Text .. "\n" .. msg
+	logLabel.Size = UDim2.new(1,-10,0,logLabel.TextBounds.Y + 8)
+	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.AbsoluteSize.Y + 10)
 	logFrame.CanvasPosition = Vector2.new(
 		0,
 		math.max(0,logFrame.CanvasSize.Y.Offset - logFrame.AbsoluteWindowSize.Y)
@@ -129,16 +129,16 @@ local list = Instance.new("ScrollingFrame", right)
 list.Size = UDim2.new(1,-10,1,-10)
 list.Position = UDim2.new(0,5,0,5)
 list.ScrollBarThickness = 4
-list.CanvasSize = UDim2.new(0,0,0,0)
 list.BackgroundTransparency = 1
+list.CanvasSize = UDim2.new(0,0,0,0)
 
 local layout = Instance.new("UIListLayout", list)
 layout.Padding = UDim.new(0,6)
 layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y+10)
+	list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end)
 
---// ADD REMOTE (RESET ARGS SAAT GANTI REMOTE)
+--// ADD REMOTE BUTTON
 local function addRemote(remote)
 	RemoteMap[remote.Name] = remote
 
@@ -157,7 +157,7 @@ local function addRemote(remote)
 			input.Text = remote.Name
 			LastRemoteName = remote.Name
 		end
-		logPrint("[SELECTED] "..remote.Name)
+		logPrint("[SELECTED] RE/"..remote.Name)
 	end)
 end
 
@@ -169,7 +169,7 @@ for _,v in ipairs(ReplicatedStorage:GetDescendants()) do
 end
 logPrint("[SYSTEM] Remotes loaded")
 
---// EXECUTE
+--// EXECUTE LOGIC
 exec.MouseButton1Click:Connect(function()
 	if input.Text == "" then
 		logPrint("[ERROR] Input kosong")
@@ -201,16 +201,27 @@ exec.MouseButton1Click:Connect(function()
 		table.insert(args,v)
 	end
 
+	local prefix = remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]"
+	logPrint(prefix..": RE/"..name)
+
+	if #args > 0 then
+		for i,v in ipairs(args) do
+			logPrint("[args"..i.."]: "..tostring(v))
+		end
+	end
+
+	logPrint("-----------------------------------")
+
 	if remote:IsA("RemoteEvent") then
 		remote:FireServer(unpack(args))
-		logPrint("[FIRE] "..name.." ("..#args.." args)")
 	else
 		local res = remote:InvokeServer(unpack(args))
-		logPrint("[INVOKE] "..name.." ("..#args.." args) -> "..tostring(res))
+		logPrint("[return]: "..tostring(res))
+		logPrint("-----------------------------------")
 	end
 end)
 
---// DRAG (PC + MOBILE)
+--// DRAG SUPPORT (MOBILE + PC)
 do
 	local dragging, startPos, startInput
 	main.InputBegan:Connect(function(i)
