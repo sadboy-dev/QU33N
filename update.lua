@@ -35,7 +35,7 @@ title.TextSize = 16
 title.TextColor3 = Color3.fromRGB(235,235,235)
 title.TextXAlignment = Enum.TextXAlignment.Left
 
---// CLOSE BUTTON
+--// CLOSE
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,32,0,32)
 close.Position = UDim2.new(1,-38,0,5)
@@ -49,7 +49,7 @@ close.MouseButton1Click:Connect(function()
 	gui.Enabled = false
 end)
 
---// MINIMIZE BUTTON
+--// MINIMIZE
 local minimize = Instance.new("TextButton", main)
 minimize.Size = UDim2.new(0,32,0,32)
 minimize.Position = UDim2.new(1,-76,0,5)
@@ -92,7 +92,7 @@ input.TextXAlignment = Enum.TextXAlignment.Left
 input.ClearTextOnFocus = false
 Instance.new("UICorner", input).CornerRadius = UDim.new(0,8)
 
---// EXECUTE BUTTON
+--// EXECUTE
 local exec = Instance.new("TextButton", left)
 exec.Size = UDim2.new(1,-20,0,42)
 exec.Position = UDim2.new(0,10,0,60)
@@ -103,7 +103,7 @@ exec.TextColor3 = Color3.fromRGB(255,255,255)
 exec.BackgroundColor3 = Color3.fromRGB(70,150,90)
 Instance.new("UICorner", exec).CornerRadius = UDim.new(0,8)
 
---// REMOTE LIST (PINDAH KE KIRI)
+--// REMOTE LIST (LEFT)
 local list = Instance.new("ScrollingFrame", left)
 list.Position = UDim2.new(0,10,0,110)
 list.Size = UDim2.new(1,-20,1,-120)
@@ -117,7 +117,7 @@ layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end)
 
---// LOG FRAME (PINDAH KE KANAN)
+--// LOG FRAME (RIGHT)
 local logFrame = Instance.new("ScrollingFrame", right)
 logFrame.Position = UDim2.new(0,10,0,10)
 logFrame.Size = UDim2.new(1,-20,1,-20)
@@ -129,6 +129,7 @@ Instance.new("UICorner", logFrame).CornerRadius = UDim.new(0,8)
 local logLabel = Instance.new("TextLabel", logFrame)
 logLabel.Position = UDim2.new(0,6,0,6)
 logLabel.Size = UDim2.new(1,-12,0,0)
+logLabel.AutomaticSize = Enum.AutomaticSize.Y
 logLabel.TextWrapped = true
 logLabel.TextXAlignment = Enum.TextXAlignment.Left
 logLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -138,17 +139,18 @@ logLabel.TextColor3 = Color3.fromRGB(0,255,0)
 logLabel.BackgroundTransparency = 1
 logLabel.Text = "[SYSTEM] Ready\n"
 
---// LOG FUNCTION (FIX MULTILINE)
+--// LOG FUNCTION (FIXED & STABLE)
 local function logPrint(msg)
 	logLabel.Text ..= msg .. "\n"
 	task.wait()
-	local h = logLabel.TextBounds.Y
-	logLabel.Size = UDim2.new(1,-12,0,h)
-	logFrame.CanvasSize = UDim2.new(0,0,0,h + 12)
-	logFrame.CanvasPosition = Vector2.new(0, math.max(0, h))
+	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.AbsoluteSize.Y + 12)
+	logFrame.CanvasPosition = Vector2.new(
+		0,
+		math.max(0, logFrame.CanvasSize.Y.Offset - logFrame.AbsoluteWindowSize.Y)
+	)
 end
 
---// ADD REMOTE BUTTON
+--// ADD REMOTE
 local function addRemote(remote)
 	RemoteMap[remote.Name] = remote
 
@@ -176,7 +178,7 @@ for _,v in ipairs(ReplicatedStorage:GetDescendants()) do
 end
 logPrint("[SYSTEM] Remotes loaded")
 
---// EXECUTE LOGIC (TIDAK DIUBAH)
+--// EXECUTE (UNCHANGED)
 exec.MouseButton1Click:Connect(function()
 	if input.Text == "" then
 		logPrint("[ERROR] Input kosong")
@@ -209,16 +211,18 @@ exec.MouseButton1Click:Connect(function()
 	end
 
 	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]").." RE/"..name)
+
 	if remote:IsA("RemoteEvent") then
 		remote:FireServer(unpack(args))
 	else
 		local res = remote:InvokeServer(unpack(args))
 		logPrint("[return]: "..tostring(res))
 	end
+
 	logPrint("-----------------------------------")
 end)
 
---// MINIMIZE LOGIC
+--// MINIMIZE
 local minimized = false
 minimize.MouseButton1Click:Connect(function()
 	minimized = not minimized
