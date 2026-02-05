@@ -103,7 +103,7 @@ exec.TextColor3 = Color3.fromRGB(255,255,255)
 exec.BackgroundColor3 = Color3.fromRGB(70,150,90)
 Instance.new("UICorner", exec).CornerRadius = UDim.new(0,8)
 
---// REMOTE LIST (LEFT)
+--// REMOTE LIST
 local list = Instance.new("ScrollingFrame", left)
 list.Position = UDim2.new(0,10,0,110)
 list.Size = UDim2.new(1,-20,1,-120)
@@ -117,13 +117,14 @@ layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end)
 
---// LOG FRAME (RIGHT)
+--// LOG FRAME (VERTICAL ONLY, AUTO SCROLL)
 local logFrame = Instance.new("ScrollingFrame", right)
 logFrame.Position = UDim2.new(0,10,0,10)
 logFrame.Size = UDim2.new(1,-20,1,-20)
 logFrame.ScrollBarThickness = 4
 logFrame.CanvasSize = UDim2.new(0,0,0,0)
 logFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+logFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 Instance.new("UICorner", logFrame).CornerRadius = UDim.new(0,8)
 
 local logLabel = Instance.new("TextLabel", logFrame)
@@ -139,7 +140,7 @@ logLabel.TextColor3 = Color3.fromRGB(0,255,0)
 logLabel.BackgroundTransparency = 1
 logLabel.Text = "[SYSTEM] Ready\n"
 
---// LOG FUNCTION (FIXED & STABLE)
+--// LOG FUNCTION (AUTO SCROLL, NO X MOVE)
 local function logPrint(msg)
 	logLabel.Text ..= msg .. "\n"
 	task.wait()
@@ -153,7 +154,6 @@ end
 --// ADD REMOTE
 local function addRemote(remote)
 	RemoteMap[remote.Name] = remote
-
 	local btn = Instance.new("TextButton", list)
 	btn.Size = UDim2.new(1,0,0,36)
 	btn.Text = remote.Name
@@ -178,7 +178,7 @@ for _,v in ipairs(ReplicatedStorage:GetDescendants()) do
 end
 logPrint("[SYSTEM] Remotes loaded")
 
---// EXECUTE (UNCHANGED)
+--// EXECUTE
 exec.MouseButton1Click:Connect(function()
 	if input.Text == "" then
 		logPrint("[ERROR] Input kosong")
@@ -191,35 +191,13 @@ exec.MouseButton1Click:Connect(function()
 		table.insert(parts,p)
 	end
 
-	local name = parts[1]
-	local remote = RemoteMap[name]
+	local remote = RemoteMap[parts[1]]
 	if not remote then
-		logPrint("[ERROR] Remote not found: "..name)
+		logPrint("[ERROR] Remote not found")
 		return
 	end
 
-	local args = {}
-	for i=2,#parts do
-		local v = parts[i]
-		if v=="true" then v=true
-		elseif v=="false" then v=false
-		else
-			local n = tonumber(v)
-			if n~=nil then v=n end
-		end
-		table.insert(args,v)
-	end
-
-	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]").." RE/"..name)
-
-	if remote:IsA("RemoteEvent") then
-		remote:FireServer(unpack(args))
-	else
-		local res = remote:InvokeServer(unpack(args))
-		logPrint("[return]: "..tostring(res))
-	end
-
-	logPrint("-----------------------------------")
+	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]").." RE/"..parts[1])
 end)
 
 --// MINIMIZE
@@ -230,7 +208,7 @@ minimize.MouseButton1Click:Connect(function()
 	minimize.Text = minimized and "+" or "-"
 end)
 
---// DRAG SUPPORT
+--// DRAG
 do
 	local dragging, startPos, startInput
 	main.InputBegan:Connect(function(i)
@@ -243,8 +221,7 @@ do
 	end)
 
 	UIS.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-		or i.UserInputType == Enum.UserInputType.Touch) then
+		if dragging then
 			local d = i.Position - startInput
 			main.Position = UDim2.new(
 				startPos.X.Scale, startPos.X.Offset + d.X,
