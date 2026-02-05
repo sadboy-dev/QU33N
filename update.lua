@@ -192,16 +192,40 @@ exec.MouseButton1Click:Connect(function()
 	end
 
 	
-	local name =  parts[1]
-	print(name)
+	
 	local remote = RemoteMap[parts[1]]
-	print(remote)
 	if not remote then
 		logPrint("[ERROR] Remote not found")
 		return
 	end
 
-	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]")..""..parts[1])
+	local args = {}
+	for i=2,#parts do
+		local v = parts[i]
+		if v=="true" then v=true
+		elseif v=="false" then v=false
+		else
+			local n = tonumber(v)
+			if n~=nil then v=n end
+		end
+		table.insert(args,v)
+	end
+	local prefix = remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]"
+	logPrint(prefix..": "...remote)
+	if #args > 0 then
+		for i,v in ipairs(args) do
+			logPrint("[args]: "...i...""...tostring(v))
+		end
+	end
+	logPrint("------------------------------")
+	if remote:IsA("RemoteEvent") then
+		remote:FireServer(unpack(args))
+	else
+		local res = remote:InvokeServer(unpack(args))
+		logPrint("[Return]: "...tostring(res))
+		logPrint("------------------------------")
+	end
+--	logPrint((remote:IsA("RemoteEvent") and "[Fire]" or "[Invoke]")..""..parts[1])
 end)
 
 --// MINIMIZE
