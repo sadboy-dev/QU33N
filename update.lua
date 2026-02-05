@@ -15,6 +15,20 @@ gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.Parent = LP:WaitForChild("PlayerGui")
 
+local bubble = Instance.new("TextButton", gui)
+bubble.Size = UDim2.fromOffset(46,46)
+bubble.Position = UDim2.fromScale(0.02,0.5)
+bubble.Text = "≡"
+bubble.Font = Enum.Font.GothamBold
+bubble.TextSize = 20
+bubble.TextColor3 = Color3.new(1,1,1)
+bubble.BackgroundColor3 = Color3.fromRGB(60,60,60)
+bubble.Visible = false
+bubble.Active = true
+bubble.Draggable = true
+Instance.new("UICorner", bubble).CornerRadius = UDim.new(1,0)
+
+
 --// MAIN FRAME
 local main = Instance.new("Frame", gui)
 main.AnchorPoint = Vector2.new(0.5,0.5)
@@ -124,6 +138,11 @@ logFrame.Size = UDim2.new(1,-20,1,-20)
 logFrame.ScrollBarThickness = 4
 logFrame.CanvasSize = UDim2.new(0,0,0,0)
 logFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+logFrame.AutomaticCanvasSize = Enum.AutomaticSize.None
+logFrame.HorizontalScrollBarInset = Enum.ScrollBarInset.None
+logFrame.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+logFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+logFrame.ElasticBehavior = Enum.ElasticBehavior.Never
 logFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 Instance.new("UICorner", logFrame).CornerRadius = UDim.new(0,8)
 
@@ -141,15 +160,32 @@ logLabel.BackgroundTransparency = 1
 logLabel.Text = "[SYSTEM] Ready\n"
 
 --// LOG FUNCTION (AUTO SCROLL, NO X MOVE)
+--local function logPrint(msg)
+--	logLabel.Text ..= msg .. "\n"
+--	task.wait()
+--	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.AbsoluteSize.Y + 12)
+--	logFrame.CanvasPosition = Vector2.new(
+--		0,
+--		math.max(0, logFrame.CanvasSize.Y.Offset - logFrame.AbsoluteWindowSize.Y)
+--	)
+--end
 local function logPrint(msg)
-	logLabel.Text ..= msg .. "\n"
-	task.wait()
-	logFrame.CanvasSize = UDim2.new(0,0,0,logLabel.AbsoluteSize.Y + 12)
+	logLabel.Text = logLabel.Text .. msg .. "\n"
+	task.wait() -- biar TextBounds update
+	logLabel.Size = UDim2.new(
+		1, -12,
+		0, logLabel.TextBounds.Y + 8
+	)
+	logFrame.CanvasSize = UDim2.new(
+		0, 0,
+		0, logLabel.Size.Y.Offset + 12
+	)
 	logFrame.CanvasPosition = Vector2.new(
 		0,
 		math.max(0, logFrame.CanvasSize.Y.Offset - logFrame.AbsoluteWindowSize.Y)
 	)
 end
+
 
 --// ADD REMOTE
 local function addRemote(remote)
@@ -231,9 +267,15 @@ end)
 --// MINIMIZE
 local minimized = false
 minimize.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	body.Visible = not minimized
-	minimize.Text = minimized and "+" or "-"
+	minimized = true
+	main.Visible = false
+	bubble.Visible = true
+end)
+
+bubble.MouseButton1Click:Connect(function()
+	minimized = false
+	main.Visible = true
+	bubble.Visible = false
 end)
 
 --// DRAG
