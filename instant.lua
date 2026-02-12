@@ -11,7 +11,7 @@ local NetFolder = ReplicatedStorage:WaitForChild("Packages")
 
 local ChargeFishingRod = NetFolder:WaitForChild("RF/ChargeFishingRod")
 local RequestFishingMinigame = NetFolder:WaitForChild("RF/RequestFishingMinigameStarted")
-local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted")
+local FishingCompleted = NetFolder:WaitForChild("RE/CatchFishCompleted")
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
 local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
 local ReplicateTextEffect = NetFolder:FindFirstChild("RE/ReplicateTextEffect")
