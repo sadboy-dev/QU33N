@@ -41,7 +41,7 @@ ToggleButton.Parent = Frame
 
 -- Variables
 local InstantFishingEnabled = false
-local InstantDelayComplete = 0.1
+local InstantDelayComplete = 0.0
 local FishMiniData = {}
 
 -- MiniEvent listener
@@ -114,7 +114,7 @@ local function StartInstantFishing()
                     local ProgressValue = -1
                     local SuccessRate = 0.999
 
-                    task.wait(0.3)
+                    
                     pcall(function()
                         RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
                     end)
