@@ -61,44 +61,6 @@ local function getFishCount()
     return tonumber((BagSizeLabel.Text or "0/???"):match("(%d+)/")) or 0
 end
 
--- Function detect fish hooked (print RGB saja, hanya player sendiri)
-local function FishHookListener()
-    if not ReplicateTextEffect then return end
-    local userId = tostring(LocalPlayer.UserId)
-
-    ReplicateTextEffect.OnClientEvent:Connect(function(args)
-        if args.TextData and args.TextData.Text == "!" then
-            local container = args.Container
-            if container and container:IsDescendantOf(LocalPlayer.Character) then
-                -- Ambil nama karakter
-                local characterName = container.Parent and container.Parent.Name or "Unknown"
-
-                -- Ambil TextColor aman
-                local r, g, b = 0, 0, 0
-                if typeof(args.TextData.TextColor) == "Color3" then
-                    r, g, b = args.TextData.TextColor.R, args.TextData.TextColor.G, args.TextData.TextColor.B
-                elseif typeof(args.TextData.TextColor) == "ColorSequence" then
-                    if #args.TextData.TextColor.Keypoints > 0 then
-                        local kp = args.TextData.TextColor.Keypoints[1].Value
-                        r, g, b = kp.R, kp.G, kp.B
-                    end
-                elseif type(args.TextData.TextColor) == "table" then
-                    r, g, b = args.TextData.TextColor[1] or 0, args.TextData.TextColor[2] or 0, args.TextData.TextColor[3] or 0
-                end
-
-                print("=== Player Info ===")
-                print("UUID:", args.UUID)
-                print("Userid:", userId)
-                print("Container:", characterName)
-                print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
-                print("Duration:", args.Duration)
-                StartInstantFishing()
-            end
-        end
-    end)
-end
-
-FishHookListener()
 
 -- Instant Fishing Loop
 local function StartInstantFishing()
@@ -139,6 +101,47 @@ local function StartInstantFishing()
         end)
     end)
 end
+
+-- Function detect fish hooked (print RGB saja, hanya player sendiri)
+local function FishHookListener()
+    if not ReplicateTextEffect then return end
+    local userId = tostring(LocalPlayer.UserId)
+
+    ReplicateTextEffect.OnClientEvent:Connect(function(args)
+        if args.TextData and args.TextData.Text == "!" then
+            local container = args.Container
+            if container and container:IsDescendantOf(LocalPlayer.Character) then
+                -- Ambil nama karakter
+                local characterName = container.Parent and container.Parent.Name or "Unknown"
+
+                -- Ambil TextColor aman
+                local r, g, b = 0, 0, 0
+                if typeof(args.TextData.TextColor) == "Color3" then
+                    r, g, b = args.TextData.TextColor.R, args.TextData.TextColor.G, args.TextData.TextColor.B
+                elseif typeof(args.TextData.TextColor) == "ColorSequence" then
+                    if #args.TextData.TextColor.Keypoints > 0 then
+                        local kp = args.TextData.TextColor.Keypoints[1].Value
+                        r, g, b = kp.R, kp.G, kp.B
+                    end
+                elseif type(args.TextData.TextColor) == "table" then
+                    r, g, b = args.TextData.TextColor[1] or 0, args.TextData.TextColor[2] or 0, args.TextData.TextColor[3] or 0
+                end
+
+                print("=== Player Info ===")
+                print("UUID:", args.UUID)
+                print("Userid:", userId)
+                print("Container:", characterName)
+                print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
+                print("Duration:", args.Duration)
+                StartInstantFishing()
+            end
+        end
+    end)
+end
+
+FishHookListener()
+
+
 
 -- Toggle Button
 ToggleButton.MouseButton1Click:Connect(function()
