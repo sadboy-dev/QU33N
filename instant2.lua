@@ -92,6 +92,7 @@ local function FishHookListener()
                 print("Container:", characterName)
                 print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
                 print("Duration:", args.Duration)
+                StartInstantFishing()
             end
         end
     end)
