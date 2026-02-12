@@ -41,7 +41,7 @@ ToggleButton.Parent = Frame
 
 -- Variables
 local InstantFishingEnabled = false
-local InstantDelayComplete = 0.1
+local InstantDelayComplete = 0.0
 local FishMiniData = {}
 
 -- MiniEvent listener
@@ -101,52 +101,42 @@ FishHookListener()
 
 -- Instant Fishing Loop
 local function StartInstantFishing()
-    print("Starting fishing...")
+    task.spawn(function()
+        pcall(function() EquipToolFromHotbar:FireServer(1) end)
+        task.wait(0.5)
+        pcall(function()
+            local success, _, rodGUID = pcall(function()
+                return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
+            end)
 
-    -- Equip rod
-    pcall(function()
-        EquipToolFromHotbar:FireServer(1)
+            if success and typeof(rodGUID) == "number" then
+                local ProgressValue = -1
+                local SuccessRate = 0.999
+
+                    
+                pcall(function()
+                    RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
+                end)
+
+                local WaitStart = tick()
+                repeat task.wait() until FishMiniData.LastShift or tick() - WaitStart > 1
+                task.wait(InstantDelayComplete)
+
+                pcall(function()
+                    -- FishingCompleted:FireServer()
+                    FishingCompleted:InvokeServer()
+                end)
+
+                local CurrentCount = getFishCount()
+                local CountWaitStart = tick()
+                repeat task.wait() until CurrentCount < getFishCount() or tick() - CountWaitStart > 1
+
+                pcall(function()
+                    CancelFishingInputs:InvokeServer()
+                end)
+            end
+        end)
     end)
-
-    task.wait(0.6)
-
-    -- Charge rod
-    local success, rodGUID = pcall(function()
-        return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
-    end)
-
-    if not success or not rodGUID then
-        warn("ChargeFishingRod failed")
-        return
-    end
-
-    print("RodGUID:", rodGUID)
-
-    -- Start minigame
-    pcall(function()
-        RequestFishingMinigame:InvokeServer(-1, 0.999, rodGUID)
-    end)
-
-    -- Wait minigame event
-    local waitStart = tick()
-    repeat task.wait()
-    until FishMiniData.LastShift or tick() - waitStart > 2
-
-    task.wait(0.15)
-
-    -- Complete
-    pcall(function()
-        FishingCompleted:InvokeServer()
-    end)
-
-    task.wait(0.2)
-
-    -- Cancel input
-    pcall(function()
-        CancelFishingInputs:InvokeServer()
-    end)
-
-    print("Fishing Done")
 end
 
 -- Toggle Button
