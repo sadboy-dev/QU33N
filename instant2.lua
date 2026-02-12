@@ -63,7 +63,7 @@ end
 
 
 -- Instant Fishing Loop
-local function StartInstantFishing()
+local function StartInstantFishing2()
     task.spawn(function()
         pcall(function() EquipToolFromHotbar:FireServer(1) end)
         task.wait(0.5)
@@ -133,7 +133,7 @@ local function FishHookListener()
                 print("Container:", characterName)
                 print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
                 print("Duration:", args.Duration)
-                StartInstantFishing()
+                StartInstantFishing2()
             end
         end
     end)
@@ -141,6 +141,46 @@ end
 
 FishHookListener()
 
+local function StartInstantFishing()
+    task.spawn(function()
+        pcall(function() EquipToolFromHotbar:FireServer(1) end)
+        task.wait(0.5)
+        while InstantFishingEnabled do
+            pcall(function()
+                local success, _, rodGUID = pcall(function()
+                    return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
+                end)
+
+                if success and typeof(rodGUID) == "number" then
+                    local ProgressValue = -1
+                    local SuccessRate = 0.999
+
+                    
+                    pcall(function()
+                        RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
+                    end)
+
+                    local WaitStart = tick()
+                    repeat task.wait() until FishMiniData.LastShift or tick() - WaitStart > 1
+                    task.wait(InstantDelayComplete)
+
+                    pcall(function()
+                        -- FishingCompleted:FireServer()
+                        FishingCompleted:InvokeServer()
+                    end)
+
+                    local CurrentCount = getFishCount()
+                    local CountWaitStart = tick()
+                    repeat task.wait() until CurrentCount < getFishCount() or tick() - CountWaitStart > 1
+
+                    pcall(function()
+                        CancelFishingInputs:InvokeServer()
+                    end)
+                end
+            end)
+        end
+    end)
+end
 
 
 -- Toggle Button
