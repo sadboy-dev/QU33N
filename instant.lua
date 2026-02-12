@@ -11,7 +11,7 @@ local NetFolder = ReplicatedStorage:WaitForChild("Packages")
 
 local ChargeFishingRod = NetFolder:WaitForChild("RF/ChargeFishingRod")
 local RequestFishingMinigame = NetFolder:WaitForChild("RF/RequestFishingMinigameStarted")
-local FishingCompleted = NetFolder:WaitForChild("RE/FishingCompleted")
+local FishingCompleted = NetFolder:WaitForChild("RF/CatchFishCompleted")
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
 local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
 local ReplicateTextEffect = NetFolder:FindFirstChild("RE/ReplicateTextEffect")
@@ -124,7 +124,8 @@ local function StartInstantFishing()
                     task.wait(InstantDelayComplete)
 
                     pcall(function()
-                        FishingCompleted:FireServer()
+                        -- FishingCompleted:FireServer()
+                        FishingCompleted:InvokeServer()
                     end)
 
                     local CurrentCount = getFishCount()
