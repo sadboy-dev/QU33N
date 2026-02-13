@@ -135,7 +135,6 @@ local function getRodUid()
         if success and typeof(rodGUID) == "number" then
             
             CurrentRodUID = rodGUID
-            print("Tes +1")
 
             local ProgressValue = -1
             local SuccessRate = 0.999
@@ -146,6 +145,7 @@ local function getRodUid()
             StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
             task.wait(0.066)
             StartFishing(ProgressValue, SuccessRate, CurrentRodUID+1)
+            print("Panggilan ke2")
 
         else
             warn("Failed to get Rod UID")
