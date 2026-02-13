@@ -162,8 +162,10 @@ local function getRodUid()
             task.wait(0.5)
             StartFishing2(ProgressValue, SuccessRate, CurrentRodUID+1)
         else
-            warn("Failed to get Rod UID")
+            goto skip
+            -- warn("Failed to get Rod UID")
         end
+        ::skip::
     end)
 end
 
