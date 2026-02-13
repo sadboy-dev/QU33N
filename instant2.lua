@@ -282,10 +282,10 @@ button.Activated:Connect(function()
         print("[FEATURED]: ON")
 
         autoequiprod()
-        task.wait(0.066)
+        updateUI()
+        -- task.wait(0.066)
         while InstantFishingEnabled do
             getRodUid()
-            updateUI()
         end
     else
         print("[FEATURED]: OFF")
