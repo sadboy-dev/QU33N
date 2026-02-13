@@ -65,24 +65,6 @@ local function StartFishing(ProgressValue, SuccessRate, rodGUID)
     pcall(function()
         RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
     end)
-    task.wait(0.066)
-    pcall(function()
-        local success, _, rodGUID = pcall(function()
-            return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
-        end)
-
-        if success and typeof(rodGUID) == "number" then
-            
-            CurrentRodUID = rodGUID
-
-            local ProgressValue = -1
-            local SuccessRate = 0.999
-
-            print("Rod UID2:", CurrentRodUID)
-        else
-            warn("Failed to get rod UID2")
-        end
-    end)
 end
 
 --================================================--
