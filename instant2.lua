@@ -62,10 +62,6 @@ end
 --================================================--
 
 local function StartFishing(ProgressValue, SuccessRate, rodGUID)
-    pcall(function()
-        RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
-    end)
-    
     if not ReplicateTextEffect then return end
     local userId = tostring(LocalPlayer.UserId)
 
@@ -91,7 +87,9 @@ local function StartFishing(ProgressValue, SuccessRate, rodGUID)
                 print("Duration:", args.Duration)
             end
         end
-
+    end)
+    pcall(function()
+        RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
     end)
 end
 
