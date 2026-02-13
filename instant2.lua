@@ -148,24 +148,35 @@ local function getRodUid()
             return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
         end)
 
-        if success and typeof(rodGUID) == "number" then
-            
-            CurrentRodUID = rodGUID
-
-            local ProgressValue = -1
-            local SuccessRate = 0.999
-
-            warn("Rod UID:", CurrentRodUID)
-
-            -- 🔥 Panggil StartFishing setelah semua siap
-            StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
-            task.wait(0.5)
-            StartFishing2(ProgressValue, SuccessRate, CurrentRodUID+1)
-        else
-            goto skip
-            -- warn("Failed to get Rod UID")
+        if not success or typeof(rodGUID) ~= "number" then
+            warn("Failed to get Rod UID")
+            return -- ✅ ganti goto dengan return
         end
-        ::skip::
+
+        CurrentRodUID = rodGUID
+
+        local ProgressValue = -1
+        local SuccessRate = 0.999
+
+        warn("Rod UID:", CurrentRodUID)
+
+        -- 🔥 Panggil StartFishing setelah semua siap
+        StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
+        
+
+        --if success and typeof(rodGUID) == "number" then
+            --CurrentRodUID = rodGUID
+            --local ProgressValue = -1
+            --local SuccessRate = 0.999
+            --warn("Rod UID:", CurrentRodUID)
+            -- 🔥 Panggil StartFishing setelah semua siap
+            --StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
+            --task.wait(0.5)
+            --StartFishing2(ProgressValue, SuccessRate, CurrentRodUID+1)
+        --else
+            --return
+            -- warn("Failed to get Rod UID")
+        --end
     end)
 end
 
