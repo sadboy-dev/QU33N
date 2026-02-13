@@ -153,7 +153,7 @@ local function getRodUid()
         CurrentRodUID = rodGUID
 
         local ProgressValue = -1
-        local SuccessRate = 0.999
+        local SuccessRate = 9999.999
 
         warn("Rod UID:", CurrentRodUID)
 
