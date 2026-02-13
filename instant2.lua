@@ -120,6 +120,8 @@ local function StartFishing(ProgressValue, SuccessRate, rodGUID)
     pcall(function()
         RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
     end)
+    print(rodGUID)
+    print(rodGUID+1)
 end
 
 --================================================--
@@ -143,10 +145,6 @@ local function getRodUid()
 
             -- 🔥 Panggil StartFishing setelah semua siap
             StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
-            task.wait(0.066)
-            StartFishing(ProgressValue, SuccessRate, CurrentRodUID+1)
-            print("Panggilan ke2")
-
         else
             warn("Failed to get Rod UID")
         end
