@@ -160,20 +160,6 @@ local function getRodUid()
         -- 🔥 Panggil StartFishing setelah semua siap
         StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
         
-
-        --if success and typeof(rodGUID) == "number" then
-            --CurrentRodUID = rodGUID
-            --local ProgressValue = -1
-            --local SuccessRate = 0.999
-            --warn("Rod UID:", CurrentRodUID)
-            -- 🔥 Panggil StartFishing setelah semua siap
-            --StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
-            --task.wait(0.5)
-            --StartFishing2(ProgressValue, SuccessRate, CurrentRodUID+1)
-        --else
-            --return
-            -- warn("Failed to get Rod UID")
-        --end
     end)
 end
 
