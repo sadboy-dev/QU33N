@@ -85,12 +85,12 @@ local function FishHookListener()
                     r, g, b = args.TextData.TextColor[1] or 0, args.TextData.TextColor[2] or 0, args.TextData.TextColor[3] or 0
                 end
 
-                print("=== Player Info ===")
-                print("UUID:", args.UUID)
-                print("Userid:", userId)
-                print("Container:", characterName)
-                print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
-                print("Duration:", args.Duration)
+                -- print("=== Player Info ===")
+                -- print("UUID:", args.UUID)
+                -- print("Userid:", userId)
+                -- print("Container:", characterName)
+                warn(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
+                -- print("Duration:", args.Duration)
                 
                 claimFish()
             end
@@ -139,7 +139,7 @@ local function getRodUid()
             local ProgressValue = -1
             local SuccessRate = 0.999
 
-            print("Rod UID:", CurrentRodUID)
+            warn("Rod UID:", CurrentRodUID)
 
             -- 🔥 Panggil StartFishing setelah semua siap
             StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
