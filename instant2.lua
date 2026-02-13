@@ -121,6 +121,10 @@ local function StartFishing(ProgressValue, SuccessRate, rodGUID)
         RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
     end)
     print(rodGUID)
+    task.await(0.5)
+    pcall(function()
+        RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID+1)
+    end)
     print(rodGUID+1)
 end
 
