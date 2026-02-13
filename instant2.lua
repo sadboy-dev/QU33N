@@ -18,13 +18,20 @@ local NetFolder = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("net")
 
 local ChargeFishingRod = NetFolder:WaitForChild("RF/ChargeFishingRod")
+local RequestFishingMinigame = NetFolder:WaitForChild("RF/RequestFishingMinigameStarted")
+local FishingCompleted = NetFolder:WaitForChild("RF/CatchFishCompleted")
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
+local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
+local ReplicateTextEffect = NetFolder:FindFirstChild("RE/ReplicateTextEffect")
 
 --================================================--
--- LOCALS
+-- INSTANT LOCALS
 --================================================--
 
 local InstantFishingEnabled = false
+local InstantDelayComplete = 0.0
+local FishMiniData = {}
+local CurrentRodUID = nil
 
 local function getFishCount()
     local InventoryGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -39,7 +46,7 @@ local function getFishCount()
 end
 
 --================================================--
--- AUTO EQUIP
+-- AUTO EQUIP ROD
 --================================================--
 
 local function autoequiprod()
@@ -51,48 +58,45 @@ local function autoequiprod()
 end
 
 --================================================--
--- TEST 2 ROD UID
+-- START FISHING FUNCTION
 --================================================--
 
-local function getRodUid()
+local function StartFishing(ProgressValue, SuccessRate, rodGUID)
     pcall(function()
-
-        -- FIRST CALL
-        local success1, _, rodUID1 = pcall(function()
-            return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
-        end)
-
-        task.wait(0.066)
-
-        -- SECOND CALL
-        local success2, _, rodUID2 = pcall(function()
-            return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
-        end)
-
-        print("RodUID1:", rodUID1)
-        print("RodUID2:", rodUID2)
-
-        if success1 and success2 then
-            if typeof(rodUID1) == "number" and typeof(rodUID2) == "number" then
-                
-                if rodUID1 ~= rodUID2 then
-                    print("✅ SUCCESS: 2 Different RodUID detected")
-                else
-                    print("⚠️ SAME RodUID returned twice")
-                end
-
-            else
-                warn("RodUID not number")
-            end
-        else
-            warn("ChargeFishingRod failed")
-        end
-
+        RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
     end)
 end
 
 --================================================--
--- GUI
+-- GET ROD UID
+--================================================--
+
+local function getRodUid()
+    pcall(function()
+        local success, _, rodGUID = pcall(function()
+            return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
+        end)
+
+        if success and typeof(rodGUID) == "number" then
+            
+            CurrentRodUID = rodGUID
+
+            local ProgressValue = -1
+            local SuccessRate = 0.999
+
+            print("Rod UID:", CurrentRodUID)
+
+            -- 🔥 Panggil StartFishing setelah semua siap
+            StartFishing(ProgressValue, SuccessRate, CurrentRodUID)
+
+        else
+            warn("Failed to get Rod UID")
+        end
+    end)
+end
+
+--================================================--
+-- GUI SETUP
 --================================================--
 
 local parentGui = game.CoreGui
@@ -111,6 +115,10 @@ gui.Name = "InstantToggleGui"
 gui.Parent = parentGui
 gui.ResetOnSpawn = false
 
+--------------------------------------------------
+-- BUTTON
+--------------------------------------------------
+
 local button = Instance.new("TextButton")
 button.Parent = gui
 button.Size = UDim2.new(0, 130, 0, 36)
@@ -122,14 +130,68 @@ button.TextColor3 = Color3.fromRGB(255,255,255)
 button.TextSize = 18
 button.Font = Enum.Font.GothamBlack
 button.AutoButtonColor = false
+button.ZIndex = 3
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 10)
 corner.Parent = button
 
---================================================--
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(0,0,0)
+stroke.Thickness = 2
+stroke.Parent = button
+
+--------------------------------------------------
+-- SHADOW
+--------------------------------------------------
+
+local shadow = Instance.new("Frame")
+shadow.Parent = button
+shadow.Size = UDim2.new(1, 0, 1, 0)
+shadow.Position = UDim2.new(0, 0, 0, 3)
+shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
+shadow.BackgroundTransparency = 0.6
+shadow.BorderSizePixel = 0
+shadow.ZIndex = 1
+
+local shadowCorner = Instance.new("UICorner")
+shadowCorner.CornerRadius = UDim.new(0, 10)
+shadowCorner.Parent = shadow
+
+--------------------------------------------------
+-- GLOSS
+--------------------------------------------------
+
+local glow = Instance.new("Frame")
+glow.Parent = button
+glow.Size = UDim2.new(1, 0, 0.5, 0)
+glow.Position = UDim2.new(0, 0, 0, 0)
+glow.BorderSizePixel = 0
+glow.ZIndex = 2
+
+local glowCorner = Instance.new("UICorner")
+glowCorner.CornerRadius = UDim.new(0, 10)
+glowCorner.Parent = glow
+
+--------------------------------------------------
+-- UPDATE UI
+--------------------------------------------------
+
+local function updateUI()
+    if InstantFishingEnabled then
+        button.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+        glow.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        glow.BackgroundTransparency = 0.6
+    else
+        button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+        glow.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+        glow.BackgroundTransparency = 0.3
+    end
+end
+
+--------------------------------------------------
 -- TOGGLE
---================================================--
+--------------------------------------------------
 
 button.Activated:Connect(function()
     InstantFishingEnabled = not InstantFishingEnabled
@@ -144,11 +206,15 @@ button.Activated:Connect(function()
     else
         print("[FEATURED]: OFF")
     end
+
+    updateUI()
 end)
 
---================================================--
--- DRAG
---================================================--
+updateUI()
+
+--------------------------------------------------
+-- DRAG SYSTEM
+--------------------------------------------------
 
 local dragging = false
 local dragInput
