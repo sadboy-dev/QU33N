@@ -50,6 +50,7 @@ local function claimFish()
     pcall(function()
         FishingCompleted:InvokeServer()
     end)
+    print("Success")
 end
 
 
@@ -87,6 +88,9 @@ local function FishHookListener()
                 print("Container:", characterName)
                 print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
                 print("Duration:", args.Duration)
+                local WaitStart = tick()
+                repeat task.wait() until FishMiniData.LastShift or tick() - WaitStart > 1
+                task.wait(InstantDelayComplete)
                 claimFish()
             end
         end
