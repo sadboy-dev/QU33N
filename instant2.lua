@@ -53,7 +53,6 @@ local function claimFish()
     pcall(function()
         FishingCompleted:InvokeServer()
     end)
-    print("Success")
 end
 
 
