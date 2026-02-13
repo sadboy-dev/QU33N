@@ -54,6 +54,8 @@ local function claimFish()
         FishingCompleted:InvokeServer()
     end)
     print("Success")
+    print("StartLoop")
+    getRodUid()
 end
 
 
@@ -147,6 +149,16 @@ local function getRodUid()
         else
             warn("Failed to get Rod UID")
         end
+    end)
+end
+
+--================================================--
+-- STOP FISHING
+--================================================--
+
+local function stopped()
+    pcall(function()
+        CancelFishingInputs:InvokeServer()
     end)
 end
 
@@ -260,6 +272,7 @@ button.Activated:Connect(function()
 
     else
         print("[FEATURED]: OFF")
+        stopped()
     end
 
     updateUI()
