@@ -268,6 +268,7 @@ button.Activated:Connect(function()
         task.wait(0.066)
         while InstantFishingEnabled do
             getRodUid()
+            updateUI()
         end
     else
         print("[FEATURED]: OFF")
