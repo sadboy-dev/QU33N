@@ -117,12 +117,9 @@ end
 --================================================--
 
 local function StartFishing(ProgressValue, SuccessRate, rodGUID)
-    print("Mulai Panggilan Pertama")
     pcall(function()
         RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
     end)
-    print(rodGUID)
-    print("Panggilan Pertama Success")
 end
 
 --================================================--
@@ -149,7 +146,7 @@ local function getRodUid()
         end)
 
         if not success or typeof(rodGUID) ~= "number" then
-            warn("Failed to get Rod UID")
+            -- warn("Failed to get Rod UID")
             return -- ✅ ganti goto dengan return
         end
 
