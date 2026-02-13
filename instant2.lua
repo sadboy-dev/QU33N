@@ -293,7 +293,7 @@ button.Activated:Connect(function()
 
         autoequiprod()
         updateUI()
-        -- task.wait(0.066)
+        task.wait(0.03)
         while InstantFishingEnabled do
             getRodUid()
         end
