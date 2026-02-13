@@ -54,8 +54,6 @@ local function claimFish()
         FishingCompleted:InvokeServer()
     end)
     print("Success")
-    print("StartLoop")
-    getRodUid()
 end
 
 
@@ -268,8 +266,9 @@ button.Activated:Connect(function()
 
         autoequiprod()
         task.wait(0.066)
-        getRodUid()
-
+        while InstantFishingEnabled do
+            getRodUid()
+        end
     else
         print("[FEATURED]: OFF")
         stopped()
