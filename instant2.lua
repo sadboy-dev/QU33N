@@ -1,193 +1,195 @@
--- Services
+--================================================--
+-- SERVICES
+--================================================--
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
 local LocalPlayer = Players.LocalPlayer
 
--- Remotes
+--================================================--
+-- REMOTES
+--================================================--
+
 local NetFolder = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
 
 local ChargeFishingRod = NetFolder:WaitForChild("RF/ChargeFishingRod")
-local RequestFishingMinigame = NetFolder:WaitForChild("RF/RequestFishingMinigameStarted")
-local FishingCompleted = NetFolder:WaitForChild("RF/CatchFishCompleted")
 local EquipToolFromHotbar = NetFolder:WaitForChild("RE/EquipToolFromHotbar")
-local CancelFishingInputs = NetFolder:WaitForChild("RF/CancelFishingInputs")
-local ReplicateTextEffect = NetFolder:FindFirstChild("RE/ReplicateTextEffect")
 
--- GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "InstantFishingGUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+--================================================--
+-- LOCALS
+--================================================--
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 180, 0, 80)
-Frame.Position = UDim2.new(0, 20, 0, 20)
-Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Frame.BorderSizePixel = 0
-Frame.Parent = ScreenGui
-
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(1, -10, 0, 40)
-ToggleButton.Position = UDim2.new(0, 5, 0, 20)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.SourceSansBold
-ToggleButton.TextSize = 18
-ToggleButton.Text = "Instant Fishing: OFF"
-ToggleButton.Parent = Frame
-
--- Variables
 local InstantFishingEnabled = false
-local InstantDelayComplete = 0.0
-local FishMiniData = {}
 
--- MiniEvent listener
-local MiniEvent = NetFolder:WaitForChild("RE/FishingMinigameChanged")
-if MiniEvent then
-    MiniEvent.OnClientEvent:Connect(function(param1, param2)
-        if param1 and param2 then
-            FishMiniData = param2
-        end
-    end)
-end
-
--- Function to get current fish count
 local function getFishCount()
-    local InventoryGui = LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Inventory"):WaitForChild("Main")
-    local BagSizeLabel = InventoryGui.Top.Options.Fish:WaitForChild("Label"):WaitForChild("BagSize")
+    local InventoryGui = LocalPlayer:WaitForChild("PlayerGui")
+        :WaitForChild("Inventory")
+        :WaitForChild("Main")
+
+    local BagSizeLabel = InventoryGui.Top.Options.Fish
+        :WaitForChild("Label")
+        :WaitForChild("BagSize")
+
     return tonumber((BagSizeLabel.Text or "0/???"):match("(%d+)/")) or 0
 end
 
+--================================================--
+-- AUTO EQUIP
+--================================================--
 
--- Instant Fishing Loop
-local function StartInstantFishing2()
+local function autoequiprod()
     task.spawn(function()
-        pcall(function() EquipToolFromHotbar:FireServer(1) end)
-        task.wait(0.5)
         pcall(function()
-            local success, _, rodGUID = pcall(function()
-                return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
-            end)
-
-            if success and typeof(rodGUID) == "number" then
-                local ProgressValue = -1
-                local SuccessRate = 0.999
-
-                    
-                pcall(function()
-                    RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
-                end)
-
-                local WaitStart = tick()
-                repeat task.wait() until FishMiniData.LastShift or tick() - WaitStart > 1
-                task.wait(InstantDelayComplete)
-
-                pcall(function()
-                    -- FishingCompleted:FireServer()
-                    FishingCompleted:InvokeServer()
-                end)
-
-                local CurrentCount = getFishCount()
-                local CountWaitStart = tick()
-                repeat task.wait() until CurrentCount < getFishCount() or tick() - CountWaitStart > 1
-
-                pcall(function()
-                    CancelFishingInputs:InvokeServer()
-                end)
-            end
+            EquipToolFromHotbar:FireServer(1)
         end)
     end)
 end
 
--- Function detect fish hooked (print RGB saja, hanya player sendiri)
-local function FishHookListener()
-    if not ReplicateTextEffect then return end
-    local userId = tostring(LocalPlayer.UserId)
+--================================================--
+-- TEST 2 ROD UID
+--================================================--
 
-    ReplicateTextEffect.OnClientEvent:Connect(function(args)
-        if args.TextData and args.TextData.Text == "!" then
-            local container = args.Container
-            if container and container:IsDescendantOf(LocalPlayer.Character) then
-                -- Ambil nama karakter
-                local characterName = container.Parent and container.Parent.Name or "Unknown"
+local function getRodUid()
+    pcall(function()
 
-                -- Ambil TextColor aman
-                local r, g, b = 0, 0, 0
-                if typeof(args.TextData.TextColor) == "Color3" then
-                    r, g, b = args.TextData.TextColor.R, args.TextData.TextColor.G, args.TextData.TextColor.B
-                elseif typeof(args.TextData.TextColor) == "ColorSequence" then
-                    if #args.TextData.TextColor.Keypoints > 0 then
-                        local kp = args.TextData.TextColor.Keypoints[1].Value
-                        r, g, b = kp.R, kp.G, kp.B
-                    end
-                elseif type(args.TextData.TextColor) == "table" then
-                    r, g, b = args.TextData.TextColor[1] or 0, args.TextData.TextColor[2] or 0, args.TextData.TextColor[3] or 0
+        -- FIRST CALL
+        local success1, _, rodUID1 = pcall(function()
+            return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
+        end)
+
+        task.wait(0.066)
+
+        -- SECOND CALL
+        local success2, _, rodUID2 = pcall(function()
+            return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
+        end)
+
+        print("RodUID1:", rodUID1)
+        print("RodUID2:", rodUID2)
+
+        if success1 and success2 then
+            if typeof(rodUID1) == "number" and typeof(rodUID2) == "number" then
+                
+                if rodUID1 ~= rodUID2 then
+                    print("✅ SUCCESS: 2 Different RodUID detected")
+                else
+                    print("⚠️ SAME RodUID returned twice")
                 end
 
-                print("=== Player Info ===")
-                print("UUID:", args.UUID)
-                print("Userid:", userId)
-                print("Container:", characterName)
-                print(string.format("TextColor: R%.2f G%.2f B%.2f", r, g, b))
-                print("Duration:", args.Duration)
-                StartInstantFishing2()
+            else
+                warn("RodUID not number")
             end
+        else
+            warn("ChargeFishingRod failed")
         end
+
     end)
 end
 
-FishHookListener()
+--================================================--
+-- GUI
+--================================================--
 
-local function StartInstantFishing()
-    task.spawn(function()
-        pcall(function() EquipToolFromHotbar:FireServer(1) end)
-        task.wait(0.5)
-        while InstantFishingEnabled do
-            pcall(function()
-                local success, _, rodGUID = pcall(function()
-                    return ChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
-                end)
+local parentGui = game.CoreGui
+pcall(function()
+    if gethui then
+        parentGui = gethui()
+    end
+end)
 
-                if success and typeof(rodGUID) == "number" then
-                    local ProgressValue = -1
-                    local SuccessRate = 0.999
+pcall(function()
+    parentGui:FindFirstChild("InstantToggleGui"):Destroy()
+end)
 
-                    
-                    pcall(function()
-                        RequestFishingMinigame:InvokeServer(ProgressValue, SuccessRate, rodGUID)
-                    end)
+local gui = Instance.new("ScreenGui")
+gui.Name = "InstantToggleGui"
+gui.Parent = parentGui
+gui.ResetOnSpawn = false
 
-                    local WaitStart = tick()
-                    repeat task.wait() until FishMiniData.LastShift or tick() - WaitStart > 1
-                    task.wait(InstantDelayComplete)
+local button = Instance.new("TextButton")
+button.Parent = gui
+button.Size = UDim2.new(0, 130, 0, 36)
+button.Position = UDim2.new(0.5, -65, 0.6, 0)
+button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+button.BorderSizePixel = 0
+button.Text = "INSTANT"
+button.TextColor3 = Color3.fromRGB(255,255,255)
+button.TextSize = 18
+button.Font = Enum.Font.GothamBlack
+button.AutoButtonColor = false
 
-                    pcall(function()
-                        -- FishingCompleted:FireServer()
-                        FishingCompleted:InvokeServer()
-                    end)
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = button
 
-                    local CurrentCount = getFishCount()
-                    local CountWaitStart = tick()
-                    repeat task.wait() until CurrentCount < getFishCount() or tick() - CountWaitStart > 1
+--================================================--
+-- TOGGLE
+--================================================--
 
-                    pcall(function()
-                        CancelFishingInputs:InvokeServer()
-                    end)
-                end
-            end)
-        end
-    end)
-end
-
-
--- Toggle Button
-ToggleButton.MouseButton1Click:Connect(function()
+button.Activated:Connect(function()
     InstantFishingEnabled = not InstantFishingEnabled
-    ToggleButton.Text = "Instant Fishing: " .. (InstantFishingEnabled and "ON" or "OFF")
+    
     if InstantFishingEnabled then
-        StartInstantFishing()
+        print("[FEATURED]: ON")
+
+        autoequiprod()
+        task.wait(0.066)
+        getRodUid()
+
+    else
+        print("[FEATURED]: OFF")
+    end
+end)
+
+--================================================--
+-- DRAG
+--================================================--
+
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    button.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
     end
 end)
