@@ -82,7 +82,7 @@ local function StartFishing(ProgressValue, SuccessRate, rodGUID)
         else
             warn("Failed to get rod UID2")
         end
-    end
+    end)
 end
 
 --================================================--
