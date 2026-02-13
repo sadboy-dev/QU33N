@@ -134,7 +134,7 @@ local function getRodUid()
 
         if success and typeof(rodGUID) == "number" then
             
-            CurrentRodUID = rodGUID
+            CurrentRodUID = rodGUID+1
 
             local ProgressValue = -1
             local SuccessRate = 0.999
